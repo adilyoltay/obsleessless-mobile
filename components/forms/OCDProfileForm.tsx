@@ -4,9 +4,8 @@ import { Text, Card, Button, Checkbox, RadioButton, TextInput, Divider } from 'r
 import { Picker } from '@/components/ui/Picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/contexts/AuthContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
+import Toast from 'react-native-toast-message';
 
 const OBSESSION_TYPES = [
   { id: 'contamination', label: 'Kirlenme/Bulaşma Korkusu' },

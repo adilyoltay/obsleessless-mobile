@@ -5,49 +5,52 @@ import { Text } from 'react-native-paper';
 interface PickerProps {
   selectedValue?: string;
   onValueChange: (value: string) => void;
-  items: { label: string; value: string }[];
-  placeholder?: string;
+  style?: any;
+  children?: React.ReactNode;
 }
 
-export function Picker({ selectedValue, onValueChange, items, placeholder }: PickerProps) {
+export function Picker({ children, selectedValue, onValueChange, style, ...props }: PickerProps) {
+  const items = React.Children.toArray(children).map((child: any) => ({
+    label: child.props.label,
+    value: child.props.value,
+  }));
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>{placeholder}</Text>
-      {items.map((item) => (
-        <View key={item.value} style={styles.option}>
-          <Text 
-            style={[styles.optionText, selectedValue === item.value && styles.selectedOption]}
-            onPress={() => onValueChange?.(item.value)}
-          >
+    <View style={[styles.container, style]}>
+      <select
+        value={selectedValue}
+        onChange={(e) => onValueChange?.(e.target.value)}
+        style={styles.select}
+        {...props}
+      >
+        {items.map((item) => (
+          <option key={item.value} value={item.value}>
             {item.label}
-          </Text>
-        </View>
-      ))}
+          </option>
+        ))}
+      </select>
     </View>
   );
 }
 
+Picker.Item = ({ label, value }: { label: string; value: string }) => null;
+
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 8,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
   },
-  label: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-  },
-  option: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  optionText: {
+  select: {
     fontSize: 16,
-    color: '#333',
-  },
-  selectedOption: {
-    color: '#10b981',
-    fontWeight: 'bold',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    color: '#374151',
+    backgroundColor: '#FFFFFF',
+    border: 'none',
+    outline: 'none',
+    width: '100%',
+    borderRadius: 8,
   },
 });
