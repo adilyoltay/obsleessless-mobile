@@ -66,8 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const initializeAuth = async () => {
     try {
-          await initializeFirebase();
-    const auth = getAuth();
+      await initializeFirebase();
+      const auth = getAuth();
 
       // Listen to authentication state changes
       const unsubscribe = onAuthStateChanged(auth, onAuthStateChangedHandler);

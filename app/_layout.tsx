@@ -23,6 +23,22 @@ SplashScreen.preventAutoHideAsync();
 
 // Global error handlers
 if (typeof window !== 'undefined') {
+  // Suppress known warnings in development
+  const originalWarn = console.warn;
+  console.warn = (...args) => {
+    const message = args[0];
+    if (
+      typeof message === 'string' && (
+        message.includes('shadow*" style props are deprecated') ||
+        message.includes('props.pointerEvents is deprecated') ||
+        message.includes('Listening to push token changes is not yet fully supported on web')
+      )
+    ) {
+      return; // Suppress these specific warnings
+    }
+    originalWarn.apply(console, args);
+  };
+
   window.addEventListener('unhandledrejection', (event) => {
     console.error('Unhandled promise rejection:', event.reason);
     event.preventDefault();
@@ -35,12 +51,6 @@ if (typeof window !== 'undefined') {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { isLoading } = useAuth();
-
-  // Loading state gösterimi - NavigationGuard handles navigation
-  if (isLoading) {
-    return null;
-  }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

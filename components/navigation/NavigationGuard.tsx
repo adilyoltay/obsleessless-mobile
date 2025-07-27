@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,29 +14,41 @@ export function NavigationGuard({ children }: NavigationGuardProps) {
   const segments = useSegments();
   const { user, isLoading: authLoading } = useAuth();
   const [isChecking, setIsChecking] = useState(true);
-  const [hasNavigated, setHasNavigated] = useState(false);
+  const hasNavigatedRef = useRef(false);
+  const lastUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (authLoading || hasNavigated) return;
+    // Reset navigation flag when auth state changes
+    if (lastUserIdRef.current !== (user?.uid || null)) {
+      hasNavigatedRef.current = false;
+      lastUserIdRef.current = user?.uid || null;
+    }
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (hasNavigatedRef.current) return;
     
     const checkNavigation = async () => {
       try {
+        const currentPath = segments.join('/');
         const inAuthGroup = segments[0] === '(auth)';
         const inTabsGroup = segments[0] === '(tabs)';
         
         console.log('🧭 Navigation Guard Check:', {
           isAuthenticated: !!user,
-          segments: segments.join('/'),
+          currentPath,
           inAuthGroup,
           inTabsGroup
         });
 
         if (!user) {
           // User not authenticated
-          if (!inAuthGroup) {
+          if (!inAuthGroup && currentPath !== '(auth)/login') {
             console.log('🔐 Redirecting to login - not authenticated');
-            setHasNavigated(true);
+            hasNavigatedRef.current = true;
             router.replace('/(auth)/login');
+            return;
           }
         } else {
           // User is authenticated, check profile completion
@@ -47,17 +59,19 @@ export function NavigationGuard({ children }: NavigationGuardProps) {
           
           if (!isProfileComplete) {
             // Profile not completed
-            if (!segments.includes('onboarding')) {
+            if (currentPath !== '(auth)/onboarding') {
               console.log('👤 Redirecting to onboarding - profile incomplete');
-              setHasNavigated(true);
+              hasNavigatedRef.current = true;
               router.replace('/(auth)/onboarding');
+              return;
             }
           } else {
             // Profile completed
             if (inAuthGroup) {
               console.log('✅ Redirecting to main app - profile complete');
-              setHasNavigated(true);
+              hasNavigatedRef.current = true;
               router.replace('/(tabs)');
+              return;
             }
           }
         }
@@ -68,15 +82,10 @@ export function NavigationGuard({ children }: NavigationGuardProps) {
       }
     };
 
-    // Delay to prevent immediate re-renders
-    const timer = setTimeout(checkNavigation, 100);
+    // Only run once per auth state change
+    const timer = setTimeout(checkNavigation, 150);
     return () => clearTimeout(timer);
-  }, [user, segments, authLoading, hasNavigated]);
-
-  // Reset navigation flag when auth state changes
-  useEffect(() => {
-    setHasNavigated(false);
-  }, [user?.uid]);
+  }, [user, authLoading, segments.join('/')]);
 
   if (authLoading || isChecking) {
     return (
