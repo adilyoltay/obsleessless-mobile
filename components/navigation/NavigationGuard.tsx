@@ -26,9 +26,9 @@ export function NavigationGuard({ children }: NavigationGuardProps) {
 
   useEffect(() => {
     if (authLoading) return;
-    if (hasNavigatedRef.current) return;
-
+    
     const checkNavigation = async () => {
+      if (hasNavigatedRef.current) return;
       try {
         const currentPath = segments.join('/');
         const inAuthGroup = segments[0] === '(auth)';

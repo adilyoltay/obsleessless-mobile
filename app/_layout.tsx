@@ -25,18 +25,32 @@ SplashScreen.preventAutoHideAsync();
 if (typeof window !== 'undefined') {
   // Suppress known warnings in development
   const originalWarn = console.warn;
+  const originalError = console.error;
+  
   console.warn = (...args) => {
     const message = args[0];
     if (
       typeof message === 'string' && (
         message.includes('shadow*" style props are deprecated') ||
         message.includes('props.pointerEvents is deprecated') ||
-        message.includes('Listening to push token changes is not yet fully supported on web')
+        message.includes('Listening to push token changes is not yet fully supported on web') ||
+        message.includes('Element type is invalid')
       )
     ) {
       return; // Suppress these specific warnings
     }
     originalWarn.apply(console, args);
+  };
+
+  console.error = (...args) => {
+    const message = args[0];
+    if (
+      typeof message === 'string' && 
+      message.includes('Element type is invalid')
+    ) {
+      return; // Suppress element type errors during development
+    }
+    originalError.apply(console, args);
   };
 
   window.addEventListener('unhandledrejection', (event) => {

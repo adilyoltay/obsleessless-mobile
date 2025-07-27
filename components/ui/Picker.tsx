@@ -1,62 +1,53 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
-import RNPickerSelect from 'react-native-picker-select';
 
 interface PickerProps {
   selectedValue?: string;
   onValueChange: (value: string) => void;
-  style?: any;
-  children: React.ReactNode;
+  items: { label: string; value: string }[];
+  placeholder?: string;
 }
 
-interface PickerItemProps {
-  label: string;
-  value: string;
-}
-
-const PickerItem = ({ label, value }: PickerItemProps) => null;
-
-export function Picker({ selectedValue, onValueChange, style, children }: PickerProps) {
-  // Web için basit select element kullanıyoruz
+export function Picker({ selectedValue, onValueChange, items, placeholder }: PickerProps) {
   return (
-    <View style={[styles.container, style]}>
-      <select
-        value={selectedValue}
-        onChange={(e) => onValueChange(e.target.value)}
-        style={styles.select}
-      >
-        {React.Children.map(children, (child) => {
-          if (React.isValidElement(child) && child.props) {
-            return (
-              <option key={child.props.value} value={child.props.value}>
-                {child.props.label}
-              </option>
-            );
-          }
-          return null;
-        })}
-      </select>
+    <View style={styles.container}>
+      <Text style={styles.label}>{placeholder}</Text>
+      {items.map((item) => (
+        <View key={item.value} style={styles.option}>
+          <Text 
+            style={[styles.optionText, selectedValue === item.value && styles.selectedOption]}
+            onPress={() => onValueChange?.(item.value)}
+          >
+            {item.label}
+          </Text>
+        </View>
+      ))}
     </View>
   );
 }
 
-Picker.Item = PickerItem;
-
 const styles = StyleSheet.create({
   container: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    marginVertical: 8,
   },
-  select: {
-    width: '100%',
-    height: 50,
-    padding: 12,
+  label: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  option: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  optionText: {
     fontSize: 16,
-    border: 'none',
-    outline: 'none',
-    backgroundColor: 'transparent',
+    color: '#333',
+  },
+  selectedOption: {
+    color: '#10b981',
+    fontWeight: 'bold',
   },
 });
