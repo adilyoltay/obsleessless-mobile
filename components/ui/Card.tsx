@@ -16,14 +16,14 @@ interface CardProps {
   borderRadius?: number;
 }
 
-export default function Card({
+const Card = ({
   children,
   style,
   variant = 'default',
   gradientColors = ['#F0FDF4', '#DCFCE7'],
   padding = 16,
   borderRadius = 12,
-}: CardProps) {
+}: CardProps) => {
   const cardStyle = [
     styles.card,
     styles[variant],
@@ -89,3 +89,5 @@ const styles = StyleSheet.create({
     // LinearGradient will handle the styling
   },
 });
+
+export default Card;

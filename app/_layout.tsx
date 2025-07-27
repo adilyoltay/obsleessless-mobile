@@ -21,47 +21,8 @@ import { NavigationGuard } from '@/components/navigation/NavigationGuard';
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-// Global error handlers - Web only
-if (Platform.OS === 'web' && typeof window !== 'undefined') {
-  // Suppress known warnings in development
-  const originalWarn = console.warn;
-  const originalError = console.error;
-  
-  console.warn = (...args) => {
-    const message = args[0];
-    if (
-      typeof message === 'string' && (
-        message.includes('shadow*" style props are deprecated') ||
-        message.includes('props.pointerEvents is deprecated') ||
-        message.includes('Listening to push token changes is not yet fully supported on web') ||
-        message.includes('Element type is invalid')
-      )
-    ) {
-      return; // Suppress these specific warnings
-    }
-    originalWarn.apply(console, args);
-  };
-
-  console.error = (...args) => {
-    const message = args[0];
-    if (
-      typeof message === 'string' && 
-      message.includes('Element type is invalid')
-    ) {
-      return; // Suppress element type errors during development
-    }
-    originalError.apply(console, args);
-  };
-
-  window.addEventListener('unhandledrejection', (event) => {
-    console.error('Unhandled promise rejection:', event.reason);
-    event.preventDefault();
-  });
-
-  window.addEventListener('error', (event) => {
-    console.error('Global error:', event.error);
-  });
-}
+// Global error handlers - disabled for React Native
+// Platform-specific error handling can be added here if needed
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
