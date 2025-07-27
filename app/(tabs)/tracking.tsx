@@ -111,8 +111,6 @@ export default function TrackingScreen() {
             </View>
           </View>
         )}
-
-        
       </View>
     </ScreenLayout>
   );
