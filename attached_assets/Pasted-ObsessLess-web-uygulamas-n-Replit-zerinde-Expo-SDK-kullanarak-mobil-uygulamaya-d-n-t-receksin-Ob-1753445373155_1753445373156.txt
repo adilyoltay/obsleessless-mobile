@@ -1,0 +1,63 @@
+ObsessLess web uygulamasını Replit üzerinde Expo SDK kullanarak mobil uygulamaya dönüştüreceksin. ObsessLess, OKB (Obsesif Kompulsif Bozukluk) yönetimi için kapsamlı özelliklere sahip bir mental sağlık platformudur.
+
+PROJE BAĞLAMI:
+- Uygulama: ObsessLess - OKB terapi ve yönetim platformu
+- Mevcut Stack: React 18, TypeScript, Tailwind CSS, Express.js, PostgreSQL
+- Hedef Platform: Replit üzerinde Expo SDK 50 + TypeScript
+- Geliştirme Ortamı: %100 bulut tabanlı Replit (local kurulum yok)
+- Özellikler: Kimlik doğrulama, Kompulsiyon takibi, ERP egzersizleri, Y-BOCS değerlendirmeleri, Oyunlaştırma, Çoklu dil (TR/EN)
+- Navigasyon: Expo Router (dosya tabanlı routing)
+- UI Kütüphanesi: React Native Paper + Expo bileşenleri
+
+GENEL TALİMATLAR:
+- Tüm geliştirme Replit'te yapılacak, local kurulum gerektirmeyecek
+- Expo managed workflow kullanılacak (native kod erişimi yok)
+- Expo Go uygulaması ile test edilecek
+- EAS Build ile production build'leri alınacak
+- Mevcut Express.js API'si değiştirilmeyecek, sadece mobil uyumlu hale getirilecek
+
+Aşağıdaki fazları sistematik olarak tamamlayacaksın:
+
+## FAZ 1: REPLIT'TE PROJE KURULUMU (1-2. Gün)
+
+### Görev 1.1 - Expo Projesi Oluşturma:
+Replit'te yeni proje oluştur:
+1. https://replit.com adresine git
+2. "Create Repl" butonuna tıkla
+3. "Expo" template'ini seç
+4. Proje adı: "ObsessLessMobile"
+5. "Create Repl" ile oluştur
+
+Teslimatlar:
+- Replit'te çalışan Expo projesi
+- TypeScript önceden yapılandırılmış
+- Development server erişilebilir
+- QR kod ile mobil test hazır
+
+### Görev 1.2 - Temel Bağımlılıkları Kurma:
+```bash
+# Replit Shell'de çalıştır:
+
+# UI Bileşenleri (Expo uyumlu)
+npm install react-native-paper @expo/vector-icons
+npm install expo-linear-gradient react-native-svg
+npm install react-native-reanimated react-native-gesture-handler
+
+# State Yönetimi
+npm install @tanstack/react-query zustand
+npm install @react-native-async-storage/async-storage
+
+# Firebase (Expo için web SDK)
+npm install firebase
+
+# Expo Modülleri
+npm install expo-secure-store expo-notifications expo-device
+npm install expo-local-authentication expo-haptics expo-blur
+npm install expo-font expo-splash-screen expo-status-bar
+
+# Form ve Validasyon
+npm install react-hook-form zod @hookform/resolvers
+
+# Yardımcı Kütüphaneler
+npm install axios date-fns @formatjs/intl-datetimeformat
+npm install react-native-safe-area-context react-native-screens

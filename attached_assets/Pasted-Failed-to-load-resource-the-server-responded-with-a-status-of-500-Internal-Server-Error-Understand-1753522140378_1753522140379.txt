@@ -1,0 +1,17 @@
+Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.routerRoot=app:138275 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.routerRoot=app:38159 Running application "main" with appParams:
+ Object 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.routerRoot=app:9443 "shadow*" style props are deprecated. Use "boxShadow".
+warnOnce @ entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.routerRoot=app:9443Understand this warning
+entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.routerRoot=app:113848 [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect.
+addListener @ entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.routerRoot=app:113848Understand this warning
+entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.routerRoot=app:82022 Firebase initialized successfully
+entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.routerRoot=app:9443 props.pointerEvents is deprecated. Use style.pointerEvents
+warnOnce @ entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.routerRoot=app:9443Understand this warning
+assets/:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.routerRoot=app:59028 Uncaught (in promise) NetworkError: A network error occurred.Understand this error
+assets/:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.routerRoot=app:59028 Uncaught (in promise) NetworkError: A network error occurred.Understand this error
