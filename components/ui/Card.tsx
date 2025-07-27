@@ -11,19 +11,19 @@ interface CardProps {
   children: React.ReactNode;
   style?: ViewStyle;
   variant?: 'default' | 'elevated' | 'outlined' | 'gradient';
-  gradientColors?: [string, string, ...string[]];
+  gradientColors?: string[];
   padding?: number;
   borderRadius?: number;
 }
 
-const Card = ({
+function Card({
   children,
   style,
   variant = 'default',
   gradientColors = ['#F0FDF4', '#DCFCE7'],
   padding = 16,
   borderRadius = 12,
-}: CardProps) => {
+}: CardProps) {
   const cardStyle = [
     styles.card,
     styles[variant],
@@ -34,10 +34,10 @@ const Card = ({
     style,
   ];
 
-  if (variant === 'gradient') {
+  if (variant === 'gradient' && gradientColors.length >= 2) {
     return (
       <LinearGradient
-        colors={gradientColors}
+        colors={gradientColors as [string, string, ...string[]]}
         style={cardStyle}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -56,8 +56,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     margin: 8,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+      web: {
+        boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+      },
+    }),
   },
   default: {
     backgroundColor: '#FFFFFF',
@@ -68,15 +81,14 @@ const styles = StyleSheet.create({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.15,
         shadowRadius: 8,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
       },
       android: {
-        elevation: 4,
+        elevation: 6,
       },
       web: {
-        boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
       },
     }),
   },
