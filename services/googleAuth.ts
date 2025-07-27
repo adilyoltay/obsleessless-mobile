@@ -1,4 +1,3 @@
-
 import { Platform } from 'react-native';
 import { GoogleAuthProvider, signInWithCredential, User } from 'firebase/auth';
 import * as AuthSession from 'expo-auth-session';
@@ -12,12 +11,12 @@ WebBrowser.maybeCompleteAuthSession();
 // Google Sign-In için optimize edilmiş fonksiyon
 export const signInWithGoogle = async (): Promise<User | null> => {
   const isDevelopment = __DEV__ || process.env.EXPO_PUBLIC_ENV === 'development';
-  
+
   try {
     if (isDevelopment) {
       console.log('🚀 Starting Google Sign-In...');
     }
-    
+
     // Validate Client ID
     if (!GOOGLE_OAUTH_WEB_CLIENT_ID || !GOOGLE_OAUTH_WEB_CLIENT_ID.includes('googleusercontent.com')) {
       throw new Error('Google OAuth Client ID yapılandırılmamış');
@@ -47,24 +46,29 @@ export const signInWithGoogle = async (): Promise<User | null> => {
     if (isDevelopment) {
       console.log('📝 OAuth Result:', result.type);
     }
-    
+
+    if (result.type === 'dismiss') {
+      console.log('🚫 Google Sign-In cancelled by user');
+      throw new Error('Kullanıcı tarafından iptal edildi');
+    }
+
     if (result.type === 'success') {
       const successResult = result as AuthSession.AuthSessionResult & {
         params: { id_token?: string };
       };
-      
+
       if (successResult.params?.id_token) {
         if (isDevelopment) {
           console.log('✅ Google ID token received, signing in to Firebase...');
         }
-        
+
         const googleCredential = GoogleAuthProvider.credential(successResult.params.id_token);
         const userCredential = await signInWithCredential(getAuth(), googleCredential);
-        
+
         if (isDevelopment) {
           console.log('🎉 Firebase sign-in successful for:', userCredential.user.email);
         }
-        
+
         return userCredential.user;
       } else {
         throw new Error('Google Sign-In başarılı ama ID token alınamadı');
@@ -75,22 +79,14 @@ export const signInWithGoogle = async (): Promise<User | null> => {
       throw new Error('Google Sign-In başarısız: ' + result.type);
     }
   } catch (error: any) {
-    if (isDevelopment) {
-      console.error('💥 Google Sign-In Error:', error.message);
+    console.error('💥 Google Sign-In Error:', error?.message || error);
+
+    // User cancelled - don't throw error
+    if (error?.message === 'Kullanıcı tarafından iptal edildi') {
+      return null;
     }
-    
-    // Handle specific Firebase Auth errors
-    if (error.code === 'auth/account-exists-with-different-credential') {
-      throw new Error('Bu email başka bir giriş yöntemiyle kayıtlı');
-    } else if (error.code === 'auth/invalid-credential') {
-      throw new Error('Geçersiz kimlik bilgileri');
-    } else if (error.code === 'auth/network-request-failed') {
-      throw new Error('İnternet bağlantınızı kontrol edin');
-    } else if (error.message?.includes('iptal') || error.message?.includes('cancel')) {
-      throw new Error('Google giriş iptal edildi');
-    } else {
-      throw new Error(error.message || 'Google giriş başarısız. Tekrar deneyin.');
-    }
+
+    throw new Error(`Google Sign-In başarısız: ${error?.message || 'Bilinmeyen hata'}`);
   }
 };
 

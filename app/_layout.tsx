@@ -15,9 +15,22 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { queryClient } from '@/lib/queryClient';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// Global error handlers
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('Unhandled promise rejection:', event.reason);
+    event.preventDefault();
+  });
+
+  window.addEventListener('error', (event) => {
+    console.error('Global error:', event.error);
+  });
+}
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
@@ -69,15 +82,17 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <RootLayoutNav />
-          </NotificationProvider>
-        </AuthProvider>
-      </LanguageProvider>
-      <Toast />
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <LanguageProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <RootLayoutNav />
+            </NotificationProvider>
+          </AuthProvider>
+        </LanguageProvider>
+        <Toast />
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Sign in with Google using new simplified method
       const user = await signInWithGoogle();
-      
+
       if (user) {
         console.log('🎉 Google login successful:', {
           uid: user.uid,
@@ -127,7 +127,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error: any) {
       console.error('❌ Google login error:', error);
-      setError(error.message || 'Google ile giriş yapılırken hata oluştu');
+
+      // If user cancelled, don't throw error
+      if (error?.message?.includes('iptal edildi')) {
+        return null;
+      }
+
       throw error;
     } finally {
       setLoading(false);

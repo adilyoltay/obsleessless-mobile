@@ -34,4 +34,9 @@ if (process.env.REPL_ID) {
 config.resolver.platforms = ['native', 'web', 'ios', 'android'];
 config.resolver.assetExts.push('db', 'mp3', 'ttf', 'obj', 'png', 'jpg');
 
+// Remove deprecated hostname option
+if (config.server && config.server.hostname) {
+  delete config.server.hostname;
+}
+
 module.exports = config;
