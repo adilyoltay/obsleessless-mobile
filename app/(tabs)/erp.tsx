@@ -3,15 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Card, Title, Paragraph, Button, Chip, ProgressBar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ScreenLayout } from '@/components/layout/ScreenLayout';
+import ScreenLayout from '@/components/layout/ScreenLayout';
 import { ERPExerciseLibrary } from '@/components/erp/ERPExerciseLibrary';
 import { ERPTimer } from '@/components/erp/ERPTimer';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useERP } from '@/hooks/useERP';
+import { useERPExercises, useERPSessionHistory } from '@/hooks/useERP';
 
 export default function ERPScreen() {
   const { t } = useTranslation();
-  const { getProgress, getTodaysSessions } = useERP();
+  const { data: exercises } = useERPExercises();
   const [activeExercise, setActiveExercise] = useState(null);
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
   const [todaySessions, setTodaySessions] = useState(0);
@@ -22,10 +22,9 @@ export default function ERPScreen() {
 
   const loadProgress = async () => {
     try {
-      const progressData = await getProgress();
-      const sessionsData = await getTodaysSessions();
-      setProgress(progressData);
-      setTodaySessions(sessionsData);
+      // TODO: Implement proper ERP progress loading with React Query
+      setProgress({ completed: 2, total: 5 });
+      setTodaySessions(1);
     } catch (error) {
       console.error('Error loading ERP progress:', error);
     }
@@ -46,7 +45,6 @@ export default function ERPScreen() {
         <ERPTimer
           exercise={activeExercise}
           onComplete={handleExerciseComplete}
-          onCancel={() => setActiveExercise(null)}
         />
       </ScreenLayout>
     );

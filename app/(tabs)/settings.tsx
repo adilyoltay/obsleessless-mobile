@@ -3,14 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Card, Title, List, Switch, Button, Avatar, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ScreenLayout } from '@/components/layout/ScreenLayout';
+import ScreenLayout from '@/components/layout/ScreenLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 
 export default function SettingsScreen() {
-  const { t, language, setLanguage } = useTranslation();
+  const { t, language } = useTranslation();
+  const { setLanguage } = useLanguage();
   const [settings, setSettings] = useState({
     notifications: true,
     biometric: false,

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Card, Title, Paragraph, Button, Chip, Avatar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ScreenLayout } from '@/components/layout/ScreenLayout';
+import ScreenLayout from '@/components/layout/ScreenLayout';
 import { YBOCSAssessment } from '@/components/assessment/YBOCSAssessment';
 import { useTranslation } from '@/hooks/useTranslation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -34,9 +34,8 @@ export default function AssessmentScreen() {
     }
   };
 
-  const handleAssessmentComplete = (score: any) => {
+  const handleAssessmentComplete = () => {
     setShowAssessment(false);
-    setLastScore(score);
     loadAssessmentData();
   };
 
