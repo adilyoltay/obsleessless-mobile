@@ -13,7 +13,7 @@ interface ScreenLayoutProps {
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
 }
 
-export function ScreenLayout({ 
+function ScreenLayout({ 
   children, 
   scrollable = true, 
   showStatusBar = true,
@@ -87,13 +87,13 @@ export function ScreenHeader({
   const colors = Colors[colorScheme ?? 'light'];
 
   return (
-    <View style={[headerStyles.container, { borderBottomColor: colors.border }]}>
+    <View style={[headerStyles.container, { borderBottomColor: colors.icon }]}>
       <View style={headerStyles.titleContainer}>
         <Text style={[headerStyles.title, { color: colors.text }]}>
           {title}
         </Text>
         {subtitle && (
-          <Text style={[headerStyles.subtitle, { color: colors.textSecondary }]}>
+          <Text style={[headerStyles.subtitle, { color: colors.tabIconDefault }]}>
             {subtitle}
           </Text>
         )}
@@ -135,3 +135,5 @@ const headerStyles = StyleSheet.create({
     marginLeft: 16,
   },
 });
+
+export default ScreenLayout;

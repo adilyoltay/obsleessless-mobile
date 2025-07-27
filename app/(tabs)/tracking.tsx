@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Card, Title, Button, Segmented, FAB } from 'react-native-paper';
+import { Card, Title, Button, SegmentedButtons, FAB } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ScreenLayout } from '@/components/layout/ScreenLayout';
+import ScreenLayout from '@/components/layout/ScreenLayout';
 import { CompulsionQuickEntry } from '@/components/forms/CompulsionQuickEntry';
 import { CompulsionHistory } from '@/components/compulsions/CompulsionHistory';
-import { CompulsionStats } from '@/components/compulsions/CompulsionStats';
+import CompulsionStats from '@/components/compulsions/CompulsionStats';
 import { useTranslation } from '@/hooks/useTranslation';
 
 export default function TrackingScreen() {

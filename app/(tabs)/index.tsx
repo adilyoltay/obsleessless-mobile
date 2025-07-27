@@ -2,30 +2,25 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Card, Title, Paragraph, Button, FAB, Avatar, Chip } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ScreenLayout } from '@/components/layout/ScreenLayout';
-import { useCompulsions } from '@/hooks/useCompulsions';
-import { CompulsionStats } from '@/components/compulsions/CompulsionStats';
+import ScreenLayout from '@/components/layout/ScreenLayout';
+import { useCompulsions, useCompulsionStats } from '@/hooks/useCompulsions';
+import CompulsionStats from '@/components/compulsions/CompulsionStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { router } from 'expo-router';
 
 export default function DashboardScreen() {
   const { t } = useTranslation();
-  const { getStats, getTodayEntries } = useCompulsions();
+  const { data: compulsions, isLoading } = useCompulsions();
+  const { data: stats } = useCompulsionStats();
   const [refreshing, setRefreshing] = useState(false);
-  const [stats, setStats] = useState<any>(null);
-  const [todayEntries, setTodayEntries] = useState<any[]>([]);
+
+  const todayEntries = compulsions?.filter(c => {
+    const today = new Date().toDateString();
+    return new Date(c.timestamp).toDateString() === today;
+  }) || [];
 
   const loadData = async () => {
-    try {
-      const [statsData, todayData] = await Promise.all([
-        getStats('today'),
-        getTodayEntries()
-      ]);
-      setStats(statsData);
-      setTodayEntries(todayData);
-    } catch (error) {
-      console.error('Error loading dashboard data:', error);
-    }
+    // Data is loaded via react-query hooks automatically
   };
 
   useEffect(() => {
@@ -91,7 +86,7 @@ export default function DashboardScreen() {
               <View style={styles.statItem}>
                 <MaterialCommunityIcons name="trending-up" size={24} color="#3B82F6" />
                 <Paragraph style={styles.statValue}>
-                  {stats?.averageIntensity?.toFixed(1) || '0'}
+                  {stats?.averageResistance?.toFixed(1) || '0'}
                 </Paragraph>
                 <Paragraph style={styles.statLabel}>Şiddet</Paragraph>
               </View>
@@ -144,7 +139,7 @@ export default function DashboardScreen() {
                     })}
                   </Chip>
                   <Paragraph style={styles.activityText}>
-                    {entry.type} - Şiddet: {entry.intensity}/10
+                    {entry.type} - Şiddet: {entry.severity}/10
                   </Paragraph>
                 </View>
               ))}
