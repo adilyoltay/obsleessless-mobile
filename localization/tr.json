@@ -271,5 +271,85 @@
     "tip3": "ERP egzersizlerini düzenli yapmak, zamanla kaygı seviyenizi azaltacaktır.",
     "tip4": "Kompülsiyonları takip etmek, tetikleyicilerinizi anlamanıza yardımcı olur.",
     "tip5": "Sabır gösterin - iyileşme zaman alır ve her küçük adım önemlidir."
+  },
+  "assessment": {
+      "title": "Y-BOCS Değerlendirme",
+      "subtitle": "OKB şiddetinizi değerlendirin",
+      "complete": "Tamamla",
+      "retake": "Yeniden Yap",
+      "yourScore": "Skorunuz"
+    },
+    "erp": {
+      "title": "ERP Egzersizleri",
+      "targetDuration": "Hedef Süre",
+      "initialAnxiety": "Başlangıç Kaygısı",
+      "currentAnxiety": "Şu Anki Kaygı",
+      "anxietyCheck": "Kaygı Kontrolü",
+      "rateCurrentAnxiety": "Şu anki kaygı seviyenizi değerlendirin",
+      "keepGoing": "Devam Et!",
+      "motivationMessage1": "Harika gidiyorsun! Kaygı geçici, güçlülük kalıcıdır.",
+      "motivationMessage2": "Her saniye daha güçlü oluyorsun. Pes etme!",
+      "motivationMessage3": "Bu zorluk seni daha güçlü yapacak. Devam et!",
+      "motivationMessage4": "Sen bu mücadeleyi kazanabilirsin. İnanıyorum!",
+      "startSession": "Oturumu Başlat",
+      "complete": "Tamamla",
+      "recordResistance": "Direnç Kaydet",
+      "resistanceRecorded": "Direnç Kaydedildi",
+      "stayStrong": "Güçlü kal! Bu geçici bir his.",
+      "target": "Hedef",
+      "peak": "Pik",
+      "current": "Şu An",
+      "resistances": "Dirençler"
+    },
+    "achievements": {
+      "title": "Başarılar",
+      "level": "Seviye",
+      "points": "Puan",
+      "all": "Tümü",
+      "unlocked": "Açılan",
+      "locked": "Kilitli",
+      "rarity": {
+        "common": "Yaygın",
+        "rare": "Nadir",
+        "epic": "Efsanevi",
+        "legendary": "Efsanevi+"
+      },
+      "firstTrack": {
+        "title": "İlk Adım",
+        "desc": "İlk kompulsiyon kaydını yap"
+      },
+      "track7Days": {
+        "title": "Haftalık Takipçi",
+        "desc": "7 gün boyunca takip yap"
+      },
+      "track30Days": {
+        "title": "Aylık Şampiyon",
+        "desc": "30 gün boyunca takip yap"
+      },
+      "firstERP": {
+        "title": "ERP Başlangıcı",
+        "desc": "İlk ERP egzersizini tamamla"
+      },
+      "erp10Sessions": {
+        "title": "ERP Ustası",
+        "desc": "10 ERP oturumu tamamla"
+      },
+      "erp100Minutes": {
+        "title": "Dayanıklılık Uzmanı",
+        "desc": "Toplam 100 dakika ERP yap"
+      },
+      "streak3": {
+        "title": "Tutarlılık",
+        "desc": "3 gün üst üste aktivite yap"
+      },
+      "streak7": {
+        "title": "Haftalık Alev",
+        "desc": "7 gün üst üste aktivite yap"
+      },
+      "streak30": {
+        "title": "Aylık Ejder",
+        "desc": "30 gün üst üste aktivite yap"
+      }
+    }
   }
-} 
+}

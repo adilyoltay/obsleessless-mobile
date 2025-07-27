@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Card, Title, List, Switch, Button, Avatar, Divider } from 'react-native-paper';
@@ -110,7 +109,7 @@ export default function SettingsScreen() {
         <Card style={styles.settingsCard} mode="elevated">
           <Card.Content>
             <Title style={styles.sectionTitle}>Uygulama Ayarları</Title>
-            
+
             <List.Item
               title="Dil"
               description={language === 'tr' ? 'Türkçe' : 'English'}
@@ -123,9 +122,9 @@ export default function SettingsScreen() {
               )}
               style={styles.listItem}
             />
-            
+
             <Divider style={styles.divider} />
-            
+
             <List.Item
               title="Bildirimler"
               description="Push bildirimleri ve hatırlatmalar"
@@ -138,9 +137,9 @@ export default function SettingsScreen() {
               )}
               style={styles.listItem}
             />
-            
+
             <Divider style={styles.divider} />
-            
+
             <List.Item
               title="Biyometrik Giriş"
               description="Face ID / Touch ID ile giriş"
@@ -160,7 +159,7 @@ export default function SettingsScreen() {
         <Card style={styles.settingsCard} mode="elevated">
           <Card.Content>
             <Title style={styles.sectionTitle}>Bildirim Tercihleri</Title>
-            
+
             <List.Item
               title="Günlük Hatırlatmalar"
               description="Kompülsiyon takibi için hatırlatma"
@@ -173,9 +172,9 @@ export default function SettingsScreen() {
               )}
               style={styles.listItem}
             />
-            
+
             <Divider style={styles.divider} />
-            
+
             <List.Item
               title="Haftalık Raporlar"
               description="İlerleme özet raporları"
@@ -195,7 +194,7 @@ export default function SettingsScreen() {
         <Card style={styles.settingsCard} mode="elevated">
           <Card.Content>
             <Title style={styles.sectionTitle}>Veri Yönetimi</Title>
-            
+
             <List.Item
               title="Verileri Dışa Aktar"
               description="Tüm verilerinizi JSON formatında indirin"
@@ -203,9 +202,9 @@ export default function SettingsScreen() {
               onPress={handleExportData}
               style={styles.listItem}
             />
-            
+
             <Divider style={styles.divider} />
-            
+
             <List.Item
               title="Verileri Sıfırla"
               description="Tüm uygulama verilerini temizle"
@@ -221,7 +220,7 @@ export default function SettingsScreen() {
         <Card style={styles.aboutCard} mode="elevated">
           <Card.Content>
             <Title style={styles.sectionTitle}>Uygulama Hakkında</Title>
-            
+
             <View style={styles.aboutInfo}>
               <View style={styles.aboutItem}>
                 <MaterialCommunityIcons name="information" size={20} color="#6B7280" />
@@ -233,7 +232,7 @@ export default function SettingsScreen() {
                   />
                 </View>
               </View>
-              
+
               <List.Item
                 title="Gizlilik Politikası"
                 left={(props) => <List.Icon {...props} icon="shield-check" />}
@@ -241,9 +240,9 @@ export default function SettingsScreen() {
                 onPress={() => console.log('Privacy policy')}
                 style={styles.listItem}
               />
-              
+
               <Divider style={styles.divider} />
-              
+
               <List.Item
                 title="Kullanım Koşulları"
                 left={(props) => <List.Icon {...props} icon="file-document" />}
@@ -251,9 +250,9 @@ export default function SettingsScreen() {
                 onPress={() => console.log('Terms of service')}
                 style={styles.listItem}
               />
-              
+
               <Divider style={styles.divider} />
-              
+
               <List.Item
                 title="Destek"
                 left={(props) => <List.Icon {...props} icon="help-circle" />}
