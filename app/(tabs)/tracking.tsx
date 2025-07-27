@@ -60,10 +60,10 @@ export default function TrackingScreen() {
       <View style={styles.container}>
         {/* Tab Navigation */}
         <View style={styles.tabContainer}>
-          <Segmented
+          <SegmentedButtons
             value={activeTab}
             onValueChange={setActiveTab}
-            segments={[
+            buttons={[
               {
                 value: 'entry',
                 label: 'Kayıt',
@@ -105,7 +105,7 @@ export default function TrackingScreen() {
                 </Button>
               </View>
               <CompulsionQuickEntry
-                onSubmit={handleEntrySubmit}
+                onSave={() => handleEntrySubmit()}
                 onCancel={() => setShowQuickEntry(false)}
               />
             </View>
