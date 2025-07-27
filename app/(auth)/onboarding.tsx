@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { OCDProfileForm } from '@/components/forms/OCDProfileForm';
 
@@ -13,18 +14,18 @@ export default function OnboardingScreen() {
 
   const steps = [
     {
-      title: t?.('onboarding.step1_title') || 'ObsessLess\'e Hoş Geldiniz',
-      description: t?.('onboarding.step1_desc') || 'OKB yönetimi yolculuğunuz burada başlıyor.',
+      title: 'ObsessLess\'e Hoş Geldiniz',
+      description: 'OKB yönetimi yolculuğunuz burada başlıyor.',
       type: 'intro',
     },
     {
-      title: t?.('onboarding.step2_title') || 'İlerlemenizi Takip Edin',
-      description: t?.('onboarding.step2_desc') || 'Kompulsiyonlarınızı izleyin ve zamanla iyileşmenizi görün.',
+      title: 'İlerlemenizi Takip Edin',
+      description: 'Kompulsiyonlarınızı izleyin ve zamanla iyileşmenizi görün.',
       type: 'feature',
     },
     {
-      title: t?.('onboarding.step3_title') || 'ERP Egzersizleri',
-      description: t?.('onboarding.step3_desc') || 'Maruz kalma ve tepki önleme tekniklerini pratik yapın.',
+      title: 'ERP Egzersizleri',
+      description: 'Maruz kalma ve tepki önleme tekniklerini pratik yapın.',
       type: 'feature',
     },
     {
@@ -93,7 +94,7 @@ export default function OnboardingScreen() {
               onPress={handleSkip}
               style={styles.skipButton}
             >
-              {t?.('common.skip') || 'Atla'}
+              Atla
             </Button>
 
             <Button
@@ -103,8 +104,8 @@ export default function OnboardingScreen() {
               {currentStep === steps.length - 2
                 ? 'Profil Oluştur'
                 : currentStep === steps.length - 1 
-                ? (t?.('common.get_started') || 'Başla')
-                : (t?.('common.next') || 'İleri')
+                ? 'Başla'
+                : 'İleri'
               }
             </Button>
           </View>

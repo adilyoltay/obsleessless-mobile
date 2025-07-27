@@ -11,12 +11,12 @@ interface CardProps {
   children: React.ReactNode;
   style?: ViewStyle;
   variant?: 'default' | 'elevated' | 'outlined' | 'gradient';
-  gradientColors?: string[];
+  gradientColors?: [string, string, ...string[]];
   padding?: number;
   borderRadius?: number;
 }
 
-export function Card({
+export default function Card({
   children,
   style,
   variant = 'default',

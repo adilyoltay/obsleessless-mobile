@@ -1,7 +1,8 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { 
   Auth, 
-  getAuth as firebaseGetAuth, 
+  getAuth as firebaseGetAuth,
+  initializeAuth,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut as firebaseSignOut, 
@@ -50,11 +51,9 @@ export const initializeFirebase = async (): Promise<void> => {
       console.log('🔥 Firebase already initialized');
     }
     
-    // Initialize Auth
+    // Initialize Auth (persistence warning can be ignored for React Native)
     auth = firebaseGetAuth(app);
-    
-    // Note: AsyncStorage persistence is automatically handled by Firebase v9+
-    // The warning can be safely ignored for React Native Expo projects
+    console.log('🔥 Firebase Auth initialized');
     
   } catch (error) {
     console.error('Firebase initialization error:', error);
