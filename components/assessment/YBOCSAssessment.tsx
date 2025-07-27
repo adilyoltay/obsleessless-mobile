@@ -23,7 +23,7 @@ const YBOCS_QUESTIONS: YBOCSQuestion[] = [
   },
   {
     id: 'obs_interference',
-    category: 'obsessions', 
+    category: 'obsessions',
     text: 'Obsesif düşünceler günlük aktivitelerinizi ne kadar engelliyor?',
     textEn: 'How much do obsessive thoughts interfere with your daily activities?'
   },
@@ -94,7 +94,11 @@ const SEVERITY_LEVELS = [
   { min: 32, max: 40, level: 'Extreme', levelTr: 'Aşırı Şiddetli', color: '#450A0A' }
 ];
 
-export function YBOCSAssessment() {
+interface YBOCSAssessmentProps {
+  onComplete?: () => void;
+}
+
+export function YBOCSAssessment({ onComplete }: YBOCSAssessmentProps) {
   const { user } = useAuth();
   const { language, t } = useLanguage();
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -135,13 +139,13 @@ export function YBOCSAssessment() {
     const obsessionScore = YBOCS_QUESTIONS
       .filter(q => q.category === 'obsessions')
       .reduce((sum, q) => sum + (responses[q.id] || 0), 0);
-    
+
     const compulsionScore = YBOCS_QUESTIONS
       .filter(q => q.category === 'compulsions')
       .reduce((sum, q) => sum + (responses[q.id] || 0), 0);
-    
+
     const totalScore = obsessionScore + compulsionScore;
-    
+
     return { obsessionScore, compulsionScore, totalScore };
   };
 
@@ -154,7 +158,7 @@ export function YBOCSAssessment() {
     try {
       const scores = calculateScore();
       const severity = getSeverityLevel(scores.totalScore);
-      
+
       const assessmentResult = {
         userId: user?.uid,
         responses,
@@ -175,12 +179,18 @@ export function YBOCSAssessment() {
       );
 
       setIsCompleted(true);
-      
+
       Toast.show({
         type: 'success',
-        text1: 'Değerlendirme Tamamlandı',
-        text2: `Y-BOCS Puanınız: ${scores.totalScore}/40`,
+        text1: '✅ Değerlendirme Tamamlandı',
+        text2: `Toplam puanınız: ${scores.totalScore}/40`
       });
+
+      // Call onComplete callback if provided
+      if (onComplete) {
+        setTimeout(onComplete, 1500);
+      }
+
     } catch (error) {
       console.error('Assessment save error:', error);
       Toast.show({
@@ -208,7 +218,7 @@ export function YBOCSAssessment() {
             <Text variant="titleMedium" style={styles.scoreTitle}>
               Toplam Puan: {scores.totalScore}/40
             </Text>
-            
+
             <View style={[styles.severityBadge, { backgroundColor: severity?.color }]}>
               <Text style={styles.severityText}>
                 {language === 'tr' ? severity?.levelTr : severity?.level}
@@ -262,7 +272,7 @@ export function YBOCSAssessment() {
           <Text variant="headlineSmall" style={styles.title}>
             Y-BOCS Değerlendirmesi
           </Text>
-          
+
           <Text variant="bodyMedium" style={styles.subtitle}>
             Soru {currentQuestion + 1} / {YBOCS_QUESTIONS.length}
           </Text>
@@ -307,7 +317,7 @@ export function YBOCSAssessment() {
             >
               Önceki
             </Button>
-            
+
             <Button
               mode="contained"
               onPress={handleNext}
@@ -427,4 +437,4 @@ const styles = StyleSheet.create({
   retakeButton: {
     marginTop: 8,
   },
-}); 
+});

@@ -61,24 +61,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Keşfet',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'compass' : 'compass-outline'} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="assessment"
-        options={{
-          title: 'Değerlendirme',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'clipboard' : 'clipboard-outline'} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="settings"
         options={{
           title: 'Ayarlar',

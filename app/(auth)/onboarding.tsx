@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { OCDProfileForm } from '@/components/forms/OCDProfileForm';
+import { YBOCSAssessment } from '@/components/assessment/YBOCSAssessment';
 import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
@@ -18,7 +19,7 @@ interface OnboardingStep {
   title: string;
   description: string;
   icon: string;
-  type: 'intro' | 'feature' | 'profile';
+  type: 'intro' | 'feature' | 'profile' | 'assessment';
 }
 
 export default function OnboardingScreen() {
@@ -55,6 +56,13 @@ export default function OnboardingScreen() {
       description: 'Başarılarınızı kutlayın, zorluklarınızı paylaşın ve motivasyonunuzu yüksek tutun.',
       icon: '🎯',
       type: 'feature',
+    },
+    {
+      id: 'assessment',
+      title: '📋 Y-BOCS Değerlendirmesi',
+      description: 'OKB belirti şiddetinizi değerlendirmek için standart Y-BOCS testini tamamlayın.',
+      icon: '📊',
+      type: 'assessment',
     },
     {
       id: 'profile',
@@ -137,6 +145,31 @@ export default function OnboardingScreen() {
       console.error('Profile completion save error:', error);
     }
   };
+
+  // Assessment step için özel render
+  if (steps[currentStep].type === 'assessment') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LinearGradient
+          colors={['#10B981', '#059669']}
+          style={styles.header}
+        >
+          <Text style={styles.headerTitle}>Y-BOCS Değerlendirmesi</Text>
+          <Text style={styles.headerSubtitle}>
+            OKB belirti şiddetinizi değerlendirelim
+          </Text>
+        </LinearGradient>
+        <View style={styles.profileContainer}>
+          <YBOCSAssessment 
+            onComplete={() => {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              handleNext();
+            }} 
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // Profile step için özel render
   if (steps[currentStep].type === 'profile') {
