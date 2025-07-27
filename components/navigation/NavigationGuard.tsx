@@ -14,26 +14,28 @@ export function NavigationGuard({ children }: NavigationGuardProps) {
   const segments = useSegments();
   const { user, isLoading: authLoading } = useAuth();
   const [isChecking, setIsChecking] = useState(true);
+  const [hasNavigated, setHasNavigated] = useState(false);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || hasNavigated) return;
     
     const checkNavigation = async () => {
       try {
         const inAuthGroup = segments[0] === '(auth)';
         const inTabsGroup = segments[0] === '(tabs)';
         
-        console.log('Navigation decision:', {
+        console.log('🧭 Navigation Guard Check:', {
           isAuthenticated: !!user,
-          isLoading: authLoading,
-          segments,
+          segments: segments.join('/'),
           inAuthGroup,
           inTabsGroup
         });
 
         if (!user) {
-          // User not authenticated, redirect to login
+          // User not authenticated
           if (!inAuthGroup) {
+            console.log('🔐 Redirecting to login - not authenticated');
+            setHasNavigated(true);
             router.replace('/(auth)/login');
           }
         } else {
@@ -41,29 +43,40 @@ export function NavigationGuard({ children }: NavigationGuardProps) {
           const profileCompleted = await AsyncStorage.getItem('profileCompleted');
           const userProfile = await AsyncStorage.getItem(`ocd_profile_${user.uid}`);
           
-          if (!profileCompleted || profileCompleted !== 'true' || !userProfile) {
-            // Profile not completed, redirect to onboarding
+          const isProfileComplete = profileCompleted === 'true' && userProfile;
+          
+          if (!isProfileComplete) {
+            // Profile not completed
             if (!segments.includes('onboarding')) {
               console.log('👤 Redirecting to onboarding - profile incomplete');
+              setHasNavigated(true);
               router.replace('/(auth)/onboarding');
             }
           } else {
-            // Profile completed, redirect to main app
+            // Profile completed
             if (inAuthGroup) {
-              console.log('✅ Profile completed, redirecting to main app');
+              console.log('✅ Redirecting to main app - profile complete');
+              setHasNavigated(true);
               router.replace('/(tabs)');
             }
           }
         }
       } catch (error) {
-        console.error('Navigation check error:', error);
+        console.error('❌ Navigation check error:', error);
       } finally {
         setIsChecking(false);
       }
     };
 
-    checkNavigation();
-  }, [user, authLoading, segments]);
+    // Delay to prevent immediate re-renders
+    const timer = setTimeout(checkNavigation, 100);
+    return () => clearTimeout(timer);
+  }, [user, segments, authLoading, hasNavigated]);
+
+  // Reset navigation flag when auth state changes
+  useEffect(() => {
+    setHasNavigated(false);
+  }, [user?.uid]);
 
   if (authLoading || isChecking) {
     return (

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text, Card, Button, Checkbox, RadioButton, TextInput, Divider } from 'react-native-paper';
@@ -40,7 +39,7 @@ const SEVERITY_LEVELS = [
 export function OCDProfileForm() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  
+
   // Form state
   const [selectedObsessions, setSelectedObsessions] = useState<string[]>([]);
   const [selectedCompulsions, setSelectedCompulsions] = useState<string[]>([]);
@@ -159,14 +158,14 @@ export function OCDProfileForm() {
 
       Toast.show({
         type: 'success',
-        text1: 'Profil Kaydedildi',
-        text2: 'OKB profiliniz başarıyla oluşturuldu',
+        text1: '🎉 Profil Oluşturuldu',
+        text2: 'Başarıyla kayıt oldunuz!'
       });
 
-      // Navigate to main app after successful save
+      // Small delay to ensure AsyncStorage is saved
       setTimeout(() => {
         router.replace('/(tabs)');
-      }, 1500);
+      }, 100);
 
     } catch (error) {
       console.error('Profile save error:', error);
@@ -201,7 +200,7 @@ export function OCDProfileForm() {
             <Text variant="bodySmall" style={styles.sectionDescription}>
               Size uyan obsesyon tiplerini seçiniz:
             </Text>
-            
+
             {OBSESSION_TYPES.map((obsession) => (
               <View key={obsession.id} style={styles.checkboxRow}>
                 <Checkbox
@@ -225,7 +224,7 @@ export function OCDProfileForm() {
             <Text variant="bodySmall" style={styles.sectionDescription}>
               Size uyan kompulsiyon tiplerini seçiniz:
             </Text>
-            
+
             {COMPULSION_TYPES.map((compulsion) => (
               <View key={compulsion.id} style={styles.checkboxRow}>
                 <Checkbox
@@ -249,7 +248,7 @@ export function OCDProfileForm() {
             <Text variant="bodySmall" style={styles.sectionDescription}>
               OKB belirtilerinizin genel şiddet seviyesi:
             </Text>
-            
+
             <RadioButton.Group onValueChange={setSeverity} value={severity}>
               {SEVERITY_LEVELS.map((level) => (
                 <View key={level.value} style={styles.radioRow}>
@@ -274,7 +273,7 @@ export function OCDProfileForm() {
             <Text variant="titleMedium" style={styles.sectionTitle}>
               Ek Bilgiler
             </Text>
-            
+
             <TextInput
               label="Başlangıç Yaşı"
               value={onsetAge}
@@ -334,7 +333,7 @@ export function OCDProfileForm() {
             <Text variant="bodySmall" style={styles.sectionDescription}>
               Bu uygulama ile ulaşmak istediğiniz hedefleri seçiniz:
             </Text>
-            
+
             {GOAL_OPTIONS.map((goal) => (
               <View key={goal.id} style={styles.checkboxRow}>
                 <Checkbox

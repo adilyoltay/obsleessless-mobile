@@ -35,22 +35,9 @@ if (typeof window !== 'undefined') {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
+  const { isLoading } = useAuth();
 
-  useEffect(() => {
-    if (!isLoading) {
-      console.log('Navigation decision:', { isAuthenticated, isLoading });
-
-      if (!isAuthenticated) {
-        router.replace('/(auth)/login');
-      } else {
-        router.replace('/(tabs)');
-      }
-    }
-  }, [isAuthenticated, isLoading, router]);
-
-  // Loading state gösterimi
+  // Loading state gösterimi - NavigationGuard handles navigation
   if (isLoading) {
     return null;
   }
