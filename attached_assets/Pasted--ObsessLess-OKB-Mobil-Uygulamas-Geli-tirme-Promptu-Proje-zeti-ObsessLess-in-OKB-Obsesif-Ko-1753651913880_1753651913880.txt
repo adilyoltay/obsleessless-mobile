@@ -1,0 +1,368 @@
+# ObsessLess OKB Mobil Uygulaması - Geliştirme Promptu
+
+## Proje Özeti
+ObsessLess'in OKB (Obsesif Kompulsif Bozukluk) odaklı mobil versiyonunu React Native/Expo kullanarak geliştireceksin. Bu uygulama, web versiyonunun tüm temel OKB tedavi özelliklerini mobil platforma taşıyacak.
+
+## Ana Özellikler ve Modüller
+
+### 1. KOMPULSIYON TAKİBİ 🧠
+**Amaç**: Kullanıcıların günlük kompulsiyonlarını kaydetmesi ve takip etmesi
+
+**Özellikler**:
+- Kompulsiyon tipi seçimi (10 kategori):
+  - Yıkama/Temizlik
+  - Kontrol etme
+  - Sayma
+  - Düzenleme/Simetri
+  - Biriktirme
+  - Mental ritüeller
+  - Tekrarlama
+  - Dokunma
+  - Dini/Ahlaki
+  - Diğer
+- Sıklık kaydı (1-100 arası)
+- Süre takibi (dakika)
+- Direnç seviyesi (1-10 skala)
+- Tetikleyici kaydı (opsiyonel)
+- Notlar alanı
+
+**Ekranlar**:
+- CompulsionTrackingScreen: Form ve günlük istatistikler
+- CompulsionHistoryScreen: Geçmiş kayıtlar ve trendler
+- CompulsionStatsScreen: Haftalık/aylık analizler
+
+**Veri Modeli**:
+```typescript
+interface Compulsion {
+  id: string;
+  userId: string;
+  type: CompulsionType;
+  frequency: number;
+  duration: number;
+  resistanceLevel: number;
+  trigger?: string;
+  notes?: string;
+  timestamp: Date;
+}
+```
+
+### 2. ERP (EXPOSURE RESPONSE PREVENTION) EGZERSİZLERİ 🛡️
+**Amaç**: Maruz bırakma terapisi oturumlarını yönetme ve takip etme
+
+**Özellikler**:
+- 4 maruz bırakma tipi:
+  - In-vivo (gerçek yaşam)
+  - İmajinal (hayal gücü)
+  - İnteroseptif (bedensel)
+  - Yanıt engelleme
+- Egzersiz zamanlayıcı (kronometre)
+- Anksiyete takibi:
+  - Başlangıç anksiyete (1-10)
+  - Pik anksiyete (1-10)
+  - Bitiş anksiyete (1-10)
+- Direnç gösterme sayacı
+- Güvenlik uyarıları
+
+**Ekranlar**:
+- ERPExercisesScreen: Egzersiz listesi ve yeni oluşturma
+- ERPSessionScreen: Aktif oturum yönetimi
+- ERPProgressScreen: İlerleme grafikleri
+
+**Özel Özellikler**:
+- 5 dakikalık interval hatırlatıcıları
+- Motivasyon mesajları (her 10 dakikada)
+- Alıştırma seviyesi takibi (1-5)
+- Başarı rozetleri
+
+### 3. Y-BOCS DEĞERLENDİRME 📊
+**Amaç**: Yale-Brown OKB ölçeği ile klinik değerlendirme
+
+**Özellikler**:
+- 10 soruluk değerlendirme (5 obsesyon + 5 kompulsiyon)
+- 0-4 puan skalası
+- Otomatik şiddet hesaplama:
+  - 0-7: Subklinik
+  - 8-15: Hafif
+  - 16-23: Orta
+  - 24-31: Şiddetli
+  - 32-40: Çok şiddetli
+- Trend analizi
+- 7 günlük değerlendirme periyodu
+
+**Ekranlar**:
+- YBOCSAssessmentScreen: Adım adım değerlendirme formu
+- YBOCSHistoryScreen: Geçmiş değerlendirmeler
+- YBOCSInsightsScreen: Klinik içgörüler
+
+### 4. OYUNLAŞTIRMA VE MOTİVASYON 🎮
+**Amaç**: Tedavi uyumunu artırmak için oyun elementleri
+
+#### 4.1 Streak Counter (Seri Takibi)
+- Günlük aktivite hedefleri
+- 5 motivasyon seviyesi:
+  - 🌱 Başlangıç (1-7 gün)
+  - ⚔️ Savaşçı (8-21 gün)
+  - 🥇 Şampiyon (22-49 gün)
+  - 🏆 Usta (50-89 gün)
+  - 👑 Efsanevi (90+ gün)
+- Aktivite dağılımı gösterimi
+- Terapötik fayda açıklamaları
+
+#### 4.2 Başarım Sistemi
+- 6 nadirlik seviyesi (Common → Mythic)
+- 30+ OKB-özel başarım:
+  - Kompulsiyon kırıcı serisi
+  - ERP kahramanı başarımları
+  - Habitüasyon ustası
+  - Anksiyete savaşçısı
+- Görsel efektler ve animasyonlar
+
+#### 4.3 Günlük Mikro Ödüller
+- Puan bazlı sistem
+- Trend ödülleri (HOT badges)
+- Çarpan sistemi (hafta sonu 2x, sabah 1.5x)
+- Haftalık koleksiyon hedefleri
+
+### 5. KİŞİSELLEŞTİRİLMİŞ ÖNERİLER 🎯
+**Amaç**: Y-BOCS skoruna ve kullanıcı profiline göre öneriler
+
+**Özellikler**:
+- Obsesyon tipine özel ERP önerileri
+- Şiddet seviyesine göre egzersizler
+- Akıllı eylem butonları
+- Hatırlatıcı oluşturma
+- Öneri kartları (swipeable)
+
+**Öneri Kategorileri**:
+- ERP egzersizleri
+- Nefes teknikleri
+- Mindfulness aktiviteleri
+- Davranışsal öneriler
+
+### 6. BİLDİRİMLER VE HATIRLATICILAR 🔔
+**Amaç**: Tedavi uyumunu desteklemek
+
+**Özellikler**:
+- Push notification desteği
+- Kategori bazlı hatırlatıcılar:
+  - Kompulsiyon kaydı
+  - ERP egzersizleri
+  - Y-BOCS değerlendirme
+  - Genel hatırlatıcılar
+- Özelleştirilebilir zamanlamalar
+- Snooze ve iptal seçenekleri
+
+## TEKNİK YAPILANDIRMA
+
+### Platform ve Framework
+```javascript
+// Tech Stack
+- React Native / Expo SDK 50
+- TypeScript
+- React Navigation (Tab + Stack)
+- React Query (veri yönetimi)
+- React Hook Form (formlar)
+- AsyncStorage (offline veri)
+- Expo Notifications
+- Expo SecureStore
+```
+
+### Veritabanı Şeması
+```typescript
+// Temel veri modelleri
+interface User {
+  id: string;
+  firebaseUid: string;
+  email: string;
+  displayName: string;
+  ocdProfile: {
+    obsessionTypes: string[];
+    compulsionTypes: string[];
+    ybocsTotalScore: number;
+    treatmentStatus: string;
+    onsetAge?: number;
+  };
+  preferences: {
+    language: 'tr' | 'en';
+    dailyGoal: number;
+    notifications: boolean;
+  };
+}
+
+interface CompulsionRecord {
+  id: string;
+  userId: string;
+  type: string;
+  frequency: number;
+  duration: number;
+  resistanceLevel: number;
+  trigger?: string;
+  notes?: string;
+  timestamp: Date;
+}
+
+interface ERPExercise {
+  id: string;
+  userId: string;
+  name: string;
+  exposureType: string;
+  fearId?: string;
+  duration: number;
+  anxietyInitial: number;
+  anxietyPeak: number;
+  anxietyFinal: number;
+  resistanceCount: number;
+  completed: boolean;
+  timestamp: Date;
+}
+
+interface YBOCSAssessment {
+  id: string;
+  userId: string;
+  obsessionScore: number;
+  compulsionScore: number;
+  totalScore: number;
+  severity: string;
+  answers: number[];
+  timestamp: Date;
+}
+```
+
+### API Endpoints
+```typescript
+// Kompulsiyon API'leri
+POST   /api/compulsions
+GET    /api/compulsions/today
+GET    /api/compulsions/history
+GET    /api/compulsions/stats
+
+// ERP API'leri
+POST   /api/erp-exercises
+GET    /api/erp-exercises/active
+GET    /api/erp-exercises/completed
+PUT    /api/erp-exercises/:id
+GET    /api/erp-exercises/progress
+
+// Y-BOCS API'leri
+POST   /api/ybocs-assessments
+GET    /api/ybocs-assessments/latest
+GET    /api/ybocs-assessments/history
+
+// Kullanıcı API'leri
+GET    /api/user-profile/:userId
+PUT    /api/user-profile/:userId
+GET    /api/achievements/:userId
+GET    /api/streaks/:userId
+
+// Bildirim API'leri
+POST   /api/reminders
+GET    /api/reminders/user/:userId
+PUT    /api/reminders/:id
+DELETE /api/reminders/:id
+```
+
+## UYGULAMA MİMARİSİ
+
+### Ekran Hiyerarşisi
+```
+Root Navigator
+├── Auth Stack
+│   ├── LoginScreen
+│   ├── SignupScreen
+│   └── OnboardingScreen (4 adımlı OKB profili)
+└── Main Tabs
+    ├── Today Tab (Ana Sayfa)
+    │   ├── DashboardScreen
+    │   └── AchievementsScreen
+    ├── Compulsions Tab
+    │   ├── CompulsionTrackingScreen
+    │   └── CompulsionHistoryScreen
+    ├── ERP Tab
+    │   ├── ERPExercisesScreen
+    │   ├── ERPSessionScreen
+    │   └── ERPProgressScreen
+    └── Settings Tab
+        ├── SettingsScreen
+        ├── ProfileScreen
+        ├── NotificationsScreen
+        └── YBOCSScreen
+```
+
+### State Yönetimi
+```typescript
+// Context'ler
+- AuthContext: Firebase auth durumu
+- LanguageContext: TR/EN dil yönetimi
+- NotificationContext: Bildirim yönetimi
+
+// React Query kullanımı
+- Veri fetching ve caching
+- Optimistic updates
+- Background refetch
+- Offline support
+```
+
+## KULLANICI DENEYİMİ
+
+### Onboarding Akışı
+1. **Hoş Geldin**: Uygulama tanıtımı
+2. **Obsesyon Profili**: Y-BOCS soruları (obsesyonlar)
+3. **Kompulsiyon Profili**: Y-BOCS soruları (kompulsiyonlar)
+4. **Kişisel Hedefler**: Günlük hedef ve bildirim ayarları
+
+### Ana Sayfa (Today Dashboard)
+- Streak counter (büyük, merkezi)
+- Bugünün özeti (kompulsiyon/ERP sayıları)
+- Kişiselleştirilmiş öneriler
+- Akıllı eylem butonları
+- Günlük mikro ödüller (collapsible)
+
+### Navigasyon
+- Alt tab bar: Bugün, OKB Takibi, ERP, Ayarlar
+- Minimal ve temiz tasarım
+- Platform-specific davranışlar
+
+## MOBİL ÖZEL ÖZELLİKLER
+
+### Push Notifications
+- Firebase Cloud Messaging
+- Kategori bazlı bildirimler
+- Sessiz saatler desteği
+- Notification actions
+
+### Offline Desteği
+- AsyncStorage ile veri saklama
+- Çevrimdışı form gönderimi
+- Online olunca senkronizasyon
+- Conflict resolution
+
+### Biyometrik Kimlik Doğrulama
+- Face ID / Touch ID (iOS)
+- Fingerprint (Android)
+- Güvenli veri saklama
+
+### Platform Optimizasyonları
+- iOS: Haptic feedback, 3D touch
+- Android: Material Design, back button
+- Tablet desteği
+
+## PERFORMANS HEDEFLERİ
+- Cold start < 3 saniye
+- 60 FPS animasyonlar
+- Bundle size < 40MB
+- Memory usage < 200MB
+- Offline-first yaklaşım
+
+## GÜVENLİK
+- Expo SecureStore kullanımı
+- API key şifreleme
+- Certificate pinning
+- Veri şifreleme
+
+## LOKALİZASYON
+- TR/EN tam destek
+- Tarih/saat formatları
+- Sayı formatları
+- Kültürel hassasiyetler
+
+Bu prompt'u kullanarak ObsessLess'in OKB odaklı mobil versiyonunu geliştirebilirsin. Terapist modülü ve raporlama özellikleri dahil edilmemiştir, sadece kullanıcının kendi OKB yönetimi için gerekli özellikler bulunmaktadır.
