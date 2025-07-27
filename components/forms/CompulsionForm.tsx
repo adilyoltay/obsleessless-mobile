@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Text, Card, Button, TextInput, HelperText } from 'react-native-paper';
-import { Picker } from '@react-native-picker/picker';
+import { Picker } from '@/components/ui/Picker';
 import Slider from '@react-native-community/slider';
 import { useCreateCompulsion } from '@/hooks/useCompulsions';
 import Toast from 'react-native-toast-message';
