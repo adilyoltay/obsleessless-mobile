@@ -1,467 +1,361 @@
-
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { Card, Text, Button, Chip, FAB } from 'react-native-paper';
-import { useAuth } from '../../contexts/AuthContext';
-import { useTranslation } from '../../hooks/useTranslation';
-import { StreakCounter } from '../../components/gamification/StreakCounter';
-import { CompulsionStats } from '../../components/compulsions/CompulsionStats';
-import { router } from 'expo-router';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+  Platform,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { Colors, Spacing, BorderRadius, Typography } from '@/constants/Colors';
+import { useCompulsions } from '@/hooks/useCompulsions';
+import { useTranslation } from '@/hooks/useTranslation';
+import StreakCounter from '@/components/gamification/StreakCounter';
+import { ScreenLayout } from '@/components/layout/ScreenLayout';
 
-interface DashboardData {
-  streak: {
-    currentStreak: number;
-    longestStreak: number;
-    level: any;
-    progress: number;
-    nextLevelIn: number;
-    todayCompleted: boolean;
-    activities: {
-      compulsionTracking: boolean;
-      erpExercise: boolean;
-      dailyGoal: boolean;
-    };
-  };
-  todayStats: {
-    compulsionCount: number;
-    erpMinutes: number;
-    resistanceAverage: number;
-    anxietyReduction: number;
-  };
-  weeklyProgress: {
-    improvement: number;
-    trend: 'up' | 'down' | 'stable';
-  };
-  personalizedTips: Array<{
-    id: string;
-    title: string;
-    description: string;
-    type: 'erp' | 'mindfulness' | 'behavioral';
-    action: string;
-  }>;
-  quickActions: Array<{
-    id: string;
-    title: string;
-    icon: string;
-    route: string;
-    color: string;
-  }>;
-}
+const { width } = Dimensions.get('window');
 
 export default function DashboardScreen() {
-  const { user } = useAuth();
+  const router = useRouter();
   const { t } = useTranslation();
-  const [refreshing, setRefreshing] = useState(false);
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
-    streak: {
-      currentStreak: 7,
-      longestStreak: 14,
-      level: {
-        id: 'beginner',
-        name: 'Başlangıç',
-        emoji: '🌱',
-        minDays: 1,
-        maxDays: 7,
-        color: ['#a8e6cf', '#88d8a3'],
-        benefits: ['İlk adımları attınız', 'Farkındalık kazanıyorsunuz']
-      },
-      progress: 0.7,
-      nextLevelIn: 1,
-      todayCompleted: false,
-      activities: {
-        compulsionTracking: true,
-        erpExercise: false,
-        dailyGoal: false,
-      }
-    },
-    todayStats: {
-      compulsionCount: 3,
-      erpMinutes: 15,
-      resistanceAverage: 6.5,
-      anxietyReduction: 40,
-    },
-    weeklyProgress: {
-      improvement: 23,
-      trend: 'up'
-    },
-    personalizedTips: [
-      {
-        id: '1',
-        title: 'ERP Egzersizi Önerisi',
-        description: 'Kapı kilidini tek seferde kontrol etme egzersizi deneyin',
-        type: 'erp',
-        action: 'ERP Başlat'
-      },
-      {
-        id: '2',
-        title: 'Nefes Tekniği',
-        description: '4-7-8 nefes tekniği anksiyete yönetimi için',
-        type: 'mindfulness',
-        action: 'Dene'
-      },
-      {
-        id: '3',
-        title: 'Davranışsal İpucu',
-        description: 'Kompulsiyonlara direnç gösterme sürenizi artırın',
-        type: 'behavioral',
-        action: 'Öğren'
-      }
-    ],
-    quickActions: [
-      {
-        id: 'track_compulsion',
-        title: 'Kompulsiyon Kaydet',
-        icon: '📊',
-        route: '/tracking',
-        color: '#FF6B35'
-      },
-      {
-        id: 'start_erp',
-        title: 'ERP Egzersizi',
-        icon: '🛡️',
-        route: '/erp',
-        color: '#4ECDC4'
-      },
-      {
-        id: 'ybocs_assessment',
-        title: 'Y-BOCS Değerlendirme',
-        icon: '📋',
-        route: '/assessment',
-        color: '#45B7D1'
-      },
-      {
-        id: 'view_progress',
-        title: 'İlerleme Görüntüle',
-        icon: '📈',
-        route: '/tracking',
-        color: '#96CEB4'
-      },
-    ]
-  });
+  const { compulsions, todayStats, weeklyProgress } = useCompulsions();
+  const [greeting, setGreeting] = useState('');
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    // TODO: Fetch fresh data
-    setTimeout(() => setRefreshing(false), 1000);
-  };
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting(t('dashboard.goodMorning'));
+    else if (hour < 18) setGreeting(t('dashboard.goodAfternoon'));
+    else setGreeting(t('dashboard.goodEvening'));
+  }, [t]);
 
-  const handleActivityPress = (activity: string) => {
-    switch (activity) {
-      case 'compulsionTracking':
-        router.push('/tracking');
-        break;
-      case 'erpExercise':
-        router.push('/erp');
-        break;
-      case 'dailyGoal':
-        router.push('/settings');
-        break;
-    }
-  };
+  const QuickActionCard = ({ 
+    title, 
+    subtitle, 
+    icon, 
+    color, 
+    onPress,
+    badge 
+  }: {
+    title: string;
+    subtitle: string;
+    icon: string;
+    color: string;
+    onPress: () => void;
+    badge?: number;
+  }) => (
+    <TouchableOpacity 
+      style={[styles.quickActionCard, { borderLeftColor: color }]} 
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.quickActionContent}>
+        <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
+          <MaterialCommunityIcons name={icon as any} size={24} color={color} />
+          {badge && badge > 0 && (
+            <View style={[styles.badge, { backgroundColor: color }]}>
+              <Text style={styles.badgeText}>{badge}</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.quickActionText}>
+          <Text style={styles.quickActionTitle}>{title}</Text>
+          <Text style={styles.quickActionSubtitle}>{subtitle}</Text>
+        </View>
+        <MaterialCommunityIcons 
+          name="chevron-right" 
+          size={20} 
+          color={Colors.light.icon} 
+        />
+      </View>
+    </TouchableOpacity>
+  );
 
-  const handleQuickAction = (route: string) => {
-    router.push(route as any);
-  };
-
-  const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
-    switch (trend) {
-      case 'up': return '📈';
-      case 'down': return '📉';
-      case 'stable': return '➡️';
-    }
-  };
-
-  const getTipIcon = (type: string) => {
-    switch (type) {
-      case 'erp': return '🛡️';
-      case 'mindfulness': return '🧘';
-      case 'behavioral': return '🎯';
-      default: return '💡';
-    }
-  };
-
-  return (
-    <View style={styles.container}>
-      <ScrollView 
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Welcome Header */}
-        <LinearGradient
-          colors={['#667eea', '#764ba2']}
-          style={styles.welcomeHeader}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Text style={styles.welcomeText}>Hoş geldin!</Text>
-          <Text style={styles.userName}>{user?.displayName || 'OKB Savaşçısı'}</Text>
-          <Text style={styles.motivationText}>
-            "Her küçük adım büyük bir zafere giden yoldur 🌟"
-          </Text>
-        </LinearGradient>
-
-        {/* Streak Counter */}
-        <View style={styles.section}>
-          <StreakCounter 
-            data={dashboardData.streak} 
-            onActivityPress={handleActivityPress}
+  const StatCard = ({ 
+    value, 
+    label, 
+    icon, 
+    color,
+    trend 
+  }: {
+    value: string | number;
+    label: string;
+    icon: string;
+    color: string;
+    trend?: 'up' | 'down' | 'stable';
+  }) => (
+    <View style={styles.statCard}>
+      <View style={[styles.statIconContainer, { backgroundColor: color + '20' }]}>
+        <MaterialCommunityIcons name={icon as any} size={20} color={color} />
+      </View>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+      {trend && (
+        <View style={styles.trendContainer}>
+          <MaterialCommunityIcons 
+            name={trend === 'up' ? 'trending-up' : trend === 'down' ? 'trending-down' : 'trending-neutral'} 
+            size={12} 
+            color={trend === 'up' ? Colors.light.success : trend === 'down' ? Colors.light.error : Colors.light.icon} 
           />
         </View>
-
-        {/* Today's Overview */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📅 Bugün Özet</Text>
-          <Card style={styles.statsCard}>
-            <Card.Content>
-              <View style={styles.statsGrid}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{dashboardData.todayStats.compulsionCount}</Text>
-                  <Text style={styles.statLabel}>Kompulsiyon</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{dashboardData.todayStats.erpMinutes}dk</Text>
-                  <Text style={styles.statLabel}>ERP Egzersizi</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{dashboardData.todayStats.resistanceAverage}/10</Text>
-                  <Text style={styles.statLabel}>Avg Direnç</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{dashboardData.todayStats.anxietyReduction}%</Text>
-                  <Text style={styles.statLabel}>Anksiyete ↓</Text>
-                </View>
-              </View>
-            </Card.Content>
-          </Card>
-        </View>
-
-        {/* Weekly Progress */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📊 Haftalık İlerleme</Text>
-          <Card style={styles.progressCard}>
-            <Card.Content>
-              <View style={styles.progressHeader}>
-                <Text style={styles.progressTitle}>
-                  {getTrendIcon(dashboardData.weeklyProgress.trend)} 
-                  %{dashboardData.weeklyProgress.improvement} İyileşme
-                </Text>
-                <Chip 
-                  icon="trending-up" 
-                  style={[styles.trendChip, { backgroundColor: '#d4edda' }]}
-                  textStyle={{ color: '#155724' }}
-                >
-                  Pozitif Trend
-                </Chip>
-              </View>
-              <Text style={styles.progressDescription}>
-                Geçen haftaya göre kompulsiyon sıklığında azalma ve direnç seviyesinde artış gözleniyor. Harika iş çıkarıyorsun! 👏
-              </Text>
-            </Card.Content>
-          </Card>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>⚡ Hızlı İşlemler</Text>
-          <View style={styles.quickActionsGrid}>
-            {dashboardData.quickActions.map((action) => (
-              <Card 
-                key={action.id} 
-                style={[styles.quickActionCard, { borderLeftColor: action.color }]}
-                onPress={() => handleQuickAction(action.route)}
-              >
-                <Card.Content style={styles.quickActionContent}>
-                  <Text style={styles.quickActionIcon}>{action.icon}</Text>
-                  <Text style={styles.quickActionTitle}>{action.title}</Text>
-                </Card.Content>
-              </Card>
-            ))}
-          </View>
-        </View>
-
-        {/* Personalized Tips */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💡 Kişisel Öneriler</Text>
-          {dashboardData.personalizedTips.map((tip) => (
-            <Card key={tip.id} style={styles.tipCard}>
-              <Card.Content>
-                <View style={styles.tipHeader}>
-                  <Text style={styles.tipIcon}>{getTipIcon(tip.type)}</Text>
-                  <View style={styles.tipContent}>
-                    <Text style={styles.tipTitle}>{tip.title}</Text>
-                    <Text style={styles.tipDescription}>{tip.description}</Text>
-                  </View>
-                  <Button 
-                    mode="outlined" 
-                    compact
-                    style={styles.tipButton}
-                  >
-                    {tip.action}
-                  </Button>
-                </View>
-              </Card.Content>
-            </Card>
-          ))}
-        </View>
-
-        <View style={{ height: 100 }} />
-      </ScrollView>
-
-      {/* Floating Action Button */}
-      <FAB
-        icon="plus"
-        style={styles.fab}
-        onPress={() => router.push('/tracking')}
-        label="Hızlı Kayıt"
-      />
+      )}
     </View>
+  );
+
+  return (
+    <ScreenLayout scrollable={true} backgroundColor={Colors.light.backgroundSecondary}>
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={Colors.light.gradient}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.greeting}>{greeting}</Text>
+            <Text style={styles.userName}>{t('dashboard.welcome')}</Text>
+          </View>
+          <TouchableOpacity style={styles.profileButton}>
+            <MaterialCommunityIcons name="account-circle" size={32} color="white" />
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+
+      {/* Streak Counter */}
+      <View style={styles.streakContainer}>
+        <StreakCounter />
+      </View>
+
+      {/* Today's Overview */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('dashboard.todayOverview')}</Text>
+        <View style={styles.statsGrid}>
+          <StatCard
+            value={todayStats?.compulsionCount || 0}
+            label={t('dashboard.compulsions')}
+            icon="brain"
+            color={Colors.light.error}
+            trend="down"
+          />
+          <StatCard
+            value={todayStats?.erpMinutes || 0}
+            label={t('dashboard.erpMinutes')}
+            icon="shield-check"
+            color={Colors.light.success}
+            trend="up"
+          />
+          <StatCard
+            value={todayStats?.resistanceAvg || 0}
+            label={t('dashboard.resistance')}
+            icon="chart-line"
+            color={Colors.light.info}
+            trend="stable"
+          />
+        </View>
+      </View>
+
+      {/* Quick Actions */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('dashboard.quickActions')}</Text>
+        <View style={styles.quickActionsContainer}>
+          <QuickActionCard
+            title={t('dashboard.trackCompulsion')}
+            subtitle={t('dashboard.logNewEntry')}
+            icon="plus-circle"
+            color={Colors.light.tint}
+            onPress={() => router.push('/tracking')}
+          />
+          <QuickActionCard
+            title={t('dashboard.startERP')}
+            subtitle={t('dashboard.beginExercise')}
+            icon="play-circle"
+            color={Colors.light.success}
+            onPress={() => router.push('/erp')}
+          />
+          <QuickActionCard
+            title={t('dashboard.viewProgress')}
+            subtitle={t('dashboard.seeAnalytics')}
+            icon="chart-arc"
+            color={Colors.light.info}
+            onPress={() => router.push('/assessment')}
+          />
+        </View>
+      </View>
+
+      {/* Motivational Quote */}
+      <View style={styles.motivationCard}>
+        <MaterialCommunityIcons 
+          name="lightbulb-on" 
+          size={24} 
+          color={Colors.light.warning} 
+        />
+        <Text style={styles.motivationText}>
+          {t('dashboard.motivationalQuote')}
+        </Text>
+      </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
+  header: {
+    marginHorizontal: -Spacing.md,
+    marginTop: -Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xl,
+    borderBottomLeftRadius: BorderRadius.xl,
+    borderBottomRightRadius: BorderRadius.xl,
   },
-  welcomeHeader: {
-    padding: 24,
-    paddingTop: 40,
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingTop: Platform.OS === 'ios' ? 20 : 0,
   },
-  welcomeText: {
-    fontSize: 18,
-    color: 'white',
-    opacity: 0.9,
+  greeting: {
+    fontSize: Typography.fontSize.md,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: Typography.fontWeight.normal,
   },
   userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: Typography.fontSize.xxl,
     color: 'white',
-    marginTop: 4,
+    fontWeight: Typography.fontWeight.bold,
+    marginTop: Spacing.xs,
   },
-  motivationText: {
-    fontSize: 14,
-    color: 'white',
-    opacity: 0.8,
-    marginTop: 8,
-    textAlign: 'center',
-    fontStyle: 'italic',
+  profileButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: BorderRadius.full,
+    padding: Spacing.sm,
+  },
+  streakContainer: {
+    marginVertical: Spacing.lg,
   },
   section: {
-    padding: 16,
+    marginBottom: Spacing.xl,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-    color: '#343a40',
-  },
-  statsCard: {
-    backgroundColor: 'white',
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.light.text,
+    marginBottom: Spacing.md,
   },
   statsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
+    gap: Spacing.sm,
   },
-  statItem: {
-    alignItems: 'center',
+  statCard: {
     flex: 1,
+    backgroundColor: Colors.light.card,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#495057',
+  statIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  statValue: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.light.text,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#6c757d',
-    marginTop: 4,
+    fontSize: Typography.fontSize.sm,
+    color: Colors.light.icon,
     textAlign: 'center',
+    marginTop: Spacing.xs,
   },
-  progressCard: {
-    backgroundColor: 'white',
+  trendContainer: {
+    position: 'absolute',
+    top: Spacing.sm,
+    right: Spacing.sm,
   },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  progressTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#495057',
-  },
-  trendChip: {
-    height: 32,
-  },
-  progressDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#6c757d',
-  },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  quickActionsContainer: {
+    gap: Spacing.sm,
   },
   quickActionCard: {
-    width: '48%',
-    marginBottom: 12,
-    backgroundColor: 'white',
+    backgroundColor: Colors.light.card,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
     borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   quickActionContent: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  quickActionIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  quickActionTitle: {
-    fontSize: 13,
-    fontWeight: '500',
-    textAlign: 'center',
-    color: '#495057',
-  },
-  tipCard: {
-    marginBottom: 12,
-    backgroundColor: 'white',
-  },
-  tipHeader: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  tipIcon: {
-    fontSize: 24,
-    marginRight: 12,
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
   },
-  tipContent: {
-    flex: 1,
-  },
-  tipTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#495057',
-    marginBottom: 2,
-  },
-  tipDescription: {
-    fontSize: 13,
-    color: '#6c757d',
-    lineHeight: 18,
-  },
-  tipButton: {
-    marginLeft: 8,
-  },
-  fab: {
+  badge: {
     position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#667eea',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: Typography.fontWeight.semibold,
+  },
+  quickActionText: {
+    flex: 1,
+    marginLeft: Spacing.md,
+  },
+  quickActionTitle: {
+    fontSize: Typography.fontSize.md,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.light.text,
+  },
+  quickActionSubtitle: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.light.icon,
+    marginTop: Spacing.xs,
+  },
+  motivationCard: {
+    backgroundColor: Colors.light.card,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.light.warning + '30',
+  },
+  motivationText: {
+    flex: 1,
+    marginLeft: Spacing.md,
+    fontSize: Typography.fontSize.md,
+    color: Colors.light.text,
+    lineHeight: 22,
+    fontStyle: 'italic',
   },
 });

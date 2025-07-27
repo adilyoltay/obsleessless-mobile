@@ -112,15 +112,7 @@ export default function TrackingScreen() {
           </View>
         )}
 
-        {/* Floating Action Button */}
-        {activeTab !== 'entry' && (
-          <FAB
-            icon="plus"
-            style={styles.fab}
-            onPress={() => setShowQuickEntry(true)}
-            label="Kayıt"
-          />
-        )}
+        
       </View>
     </ScreenLayout>
   );

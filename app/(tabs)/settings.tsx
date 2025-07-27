@@ -1,377 +1,390 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { Card, Title, List, Switch, Button, Avatar, Divider } from 'react-native-paper';
+
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+  Alert,
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import ScreenLayout from '@/components/layout/ScreenLayout';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors, Spacing, BorderRadius, Typography } from '@/constants/Colors';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useLanguage } from '@/contexts/LanguageContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
+import { ScreenLayout } from '@/components/layout/ScreenLayout';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsScreen() {
-  const { t, language } = useTranslation();
-  const { setLanguage } = useLanguage();
-  const [settings, setSettings] = useState({
-    notifications: true,
-    biometric: false,
-    darkMode: false,
-    reminderTimes: true,
-    weeklyReports: true,
-  });
+  const { t } = useTranslation();
+  const { logout } = useAuth();
+  const [notifications, setNotifications] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
+  const [analytics, setAnalytics] = useState(true);
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
+  const SettingItem = ({ 
+    title, 
+    subtitle, 
+    icon, 
+    onPress, 
+    rightComponent,
+    color = Colors.light.tint,
+    showChevron = true
+  }: {
+    title: string;
+    subtitle?: string;
+    icon: string;
+    onPress?: () => void;
+    rightComponent?: React.ReactNode;
+    color?: string;
+    showChevron?: boolean;
+  }) => (
+    <TouchableOpacity
+      style={styles.settingItem}
+      onPress={onPress}
+      activeOpacity={0.7}
+      disabled={!onPress}
+    >
+      <View style={[styles.settingIconContainer, { backgroundColor: color + '20' }]}>
+        <MaterialCommunityIcons name={icon as any} size={20} color={color} />
+      </View>
+      <View style={styles.settingContent}>
+        <Text style={styles.settingTitle}>{title}</Text>
+        {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+      </View>
+      {rightComponent || (showChevron && (
+        <MaterialCommunityIcons 
+          name="chevron-right" 
+          size={20} 
+          color={Colors.light.icon} 
+        />
+      ))}
+    </TouchableOpacity>
+  );
 
-  const loadSettings = async () => {
-    try {
-      const storedSettings = await AsyncStorage.getItem('app_settings');
-      if (storedSettings) {
-        setSettings(JSON.parse(storedSettings));
-      }
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    }
-  };
+  const SettingSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <View style={styles.settingSection}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.sectionContent}>
+        {children}
+      </View>
+    </View>
+  );
 
-  const saveSettings = async (newSettings: any) => {
-    try {
-      await AsyncStorage.setItem('app_settings', JSON.stringify(newSettings));
-      setSettings(newSettings);
-    } catch (error) {
-      console.error('Error saving settings:', error);
-    }
-  };
-
-  const handleSettingChange = (key: string, value: boolean) => {
-    const newSettings = { ...settings, [key]: value };
-    saveSettings(newSettings);
-  };
-
-  const handleLanguageToggle = () => {
-    const newLanguage = language === 'tr' ? 'en' : 'tr';
-    setLanguage(newLanguage);
-  };
-
-  const handleExportData = () => {
+  const handleLogout = () => {
     Alert.alert(
-      'Veri Dışa Aktarma',
-      'Verilerinizi dışa aktarmak istediğinizden emin misiniz?',
+      t('settings.confirmLogout'),
+      t('settings.logoutMessage'),
       [
-        { text: 'İptal', style: 'cancel' },
-        { text: 'Aktar', onPress: () => console.log('Export data') }
-      ]
-    );
-  };
-
-  const handleResetData = () => {
-    Alert.alert(
-      'Verileri Sıfırla',
-      'Tüm verileriniz silinecek. Bu işlem geri alınamaz.',
-      [
-        { text: 'İptal', style: 'cancel' },
+        { text: t('settings.cancel'), style: 'cancel' },
         { 
-          text: 'Sıfırla', 
+          text: t('settings.logout'), 
           style: 'destructive',
-          onPress: () => console.log('Reset data') 
-        }
+          onPress: logout 
+        },
       ]
     );
   };
+
+  const ProfileCard = () => (
+    <View style={styles.profileCard}>
+      <LinearGradient
+        colors={Colors.light.gradient}
+        style={styles.profileGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+      <View style={styles.profileAvatar}>
+        <MaterialCommunityIcons name="account" size={32} color="white" />
+      </View>
+      <View style={styles.profileInfo}>
+        <Text style={styles.profileName}>Kullanıcı Adı</Text>
+        <Text style={styles.profileEmail}>user@example.com</Text>
+        <Text style={styles.profileJoinDate}>2024'ten beri üye</Text>
+      </View>
+      <TouchableOpacity style={styles.profileEditButton}>
+        <MaterialCommunityIcons name="pencil" size={18} color="white" />
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
-    <ScreenLayout scrollable backgroundColor="#FAFAFA">
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Profile Section */}
-        <Card style={styles.profileCard} mode="elevated">
-          <Card.Content>
-            <View style={styles.profileContainer}>
-              <Avatar.Icon 
-                size={64} 
-                icon="account" 
-                style={styles.profileAvatar}
-              />
-              <View style={styles.profileInfo}>
-                <Title style={styles.profileName}>Kullanıcı</Title>
-                <List.Item
-                  title="Profili Düzenle"
-                  titleStyle={styles.profileEditText}
-                  left={(props) => <List.Icon {...props} icon="pencil" color="#3B82F6" />}
-                  onPress={() => router.push('/(auth)/onboarding')}
-                  style={styles.profileEditItem}
-                />
-              </View>
-            </View>
-          </Card.Content>
-        </Card>
+    <ScreenLayout scrollable={true} backgroundColor={Colors.light.backgroundSecondary}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>{t('settings.title')}</Text>
+        <Text style={styles.headerSubtitle}>{t('settings.subtitle')}</Text>
+      </View>
 
-        {/* App Settings */}
-        <Card style={styles.settingsCard} mode="elevated">
-          <Card.Content>
-            <Title style={styles.sectionTitle}>Uygulama Ayarları</Title>
+      {/* Profile Card */}
+      <ProfileCard />
 
-            <List.Item
-              title="Dil"
-              description={language === 'tr' ? 'Türkçe' : 'English'}
-              left={(props) => <List.Icon {...props} icon="translate" />}
-              right={() => (
-                <Switch
-                  value={language === 'en'}
-                  onValueChange={handleLanguageToggle}
-                />
-              )}
-              style={styles.listItem}
+      {/* Settings Sections */}
+      <SettingSection title={t('settings.preferences')}>
+        <SettingItem
+          title={t('settings.notifications')}
+          subtitle={t('settings.notificationsDesc')}
+          icon="bell"
+          color={Colors.light.warning}
+          rightComponent={
+            <Switch
+              value={notifications}
+              onValueChange={setNotifications}
+              trackColor={{ false: Colors.light.border, true: Colors.light.warning }}
+              thumbColor={notifications ? 'white' : Colors.light.icon}
             />
-
-            <Divider style={styles.divider} />
-
-            <List.Item
-              title="Bildirimler"
-              description="Push bildirimleri ve hatırlatmalar"
-              left={(props) => <List.Icon {...props} icon="bell" />}
-              right={() => (
-                <Switch
-                  value={settings.notifications}
-                  onValueChange={(value) => handleSettingChange('notifications', value)}
-                />
-              )}
-              style={styles.listItem}
+          }
+          showChevron={false}
+        />
+        <SettingItem
+          title={t('settings.darkMode')}
+          subtitle={t('settings.darkModeDesc')}
+          icon="theme-light-dark"
+          color={Colors.light.info}
+          rightComponent={
+            <Switch
+              value={darkMode}
+              onValueChange={setDarkMode}
+              trackColor={{ false: Colors.light.border, true: Colors.light.info }}
+              thumbColor={darkMode ? 'white' : Colors.light.icon}
             />
+          }
+          showChevron={false}
+        />
+        <SettingItem
+          title={t('settings.language')}
+          subtitle="Türkçe"
+          icon="translate"
+          color={Colors.light.success}
+          onPress={() => {}}
+        />
+      </SettingSection>
 
-            <Divider style={styles.divider} />
-
-            <List.Item
-              title="Biyometrik Giriş"
-              description="Face ID / Touch ID ile giriş"
-              left={(props) => <List.Icon {...props} icon="fingerprint" />}
-              right={() => (
-                <Switch
-                  value={settings.biometric}
-                  onValueChange={(value) => handleSettingChange('biometric', value)}
-                />
-              )}
-              style={styles.listItem}
+      <SettingSection title={t('settings.privacy')}>
+        <SettingItem
+          title={t('settings.analytics')}
+          subtitle={t('settings.analyticsDesc')}
+          icon="chart-box"
+          color={Colors.light.tint}
+          rightComponent={
+            <Switch
+              value={analytics}
+              onValueChange={setAnalytics}
+              trackColor={{ false: Colors.light.border, true: Colors.light.tint }}
+              thumbColor={analytics ? 'white' : Colors.light.icon}
             />
-          </Card.Content>
-        </Card>
+          }
+          showChevron={false}
+        />
+        <SettingItem
+          title={t('settings.dataExport')}
+          subtitle={t('settings.dataExportDesc')}
+          icon="download"
+          color={Colors.light.info}
+          onPress={() => {}}
+        />
+        <SettingItem
+          title={t('settings.deleteAccount')}
+          subtitle={t('settings.deleteAccountDesc')}
+          icon="delete-forever"
+          color={Colors.light.error}
+          onPress={() => {}}
+        />
+      </SettingSection>
 
-        {/* Notification Settings */}
-        <Card style={styles.settingsCard} mode="elevated">
-          <Card.Content>
-            <Title style={styles.sectionTitle}>Bildirim Tercihleri</Title>
+      <SettingSection title={t('settings.support')}>
+        <SettingItem
+          title={t('settings.help')}
+          subtitle={t('settings.helpDesc')}
+          icon="help-circle"
+          color={Colors.light.success}
+          onPress={() => {}}
+        />
+        <SettingItem
+          title={t('settings.feedback')}
+          subtitle={t('settings.feedbackDesc')}
+          icon="message-text"
+          color={Colors.light.warning}
+          onPress={() => {}}
+        />
+        <SettingItem
+          title={t('settings.about')}
+          subtitle="v1.0.0"
+          icon="information"
+          color={Colors.light.info}
+          onPress={() => {}}
+        />
+      </SettingSection>
 
-            <List.Item
-              title="Günlük Hatırlatmalar"
-              description="Kompülsiyon takibi için hatırlatma"
-              left={(props) => <List.Icon {...props} icon="clock-alert" />}
-              right={() => (
-                <Switch
-                  value={settings.reminderTimes}
-                  onValueChange={(value) => handleSettingChange('reminderTimes', value)}
-                />
-              )}
-              style={styles.listItem}
-            />
+      {/* Logout Button */}
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <MaterialCommunityIcons name="logout" size={20} color={Colors.light.error} />
+        <Text style={styles.logoutText}>{t('settings.logout')}</Text>
+      </TouchableOpacity>
 
-            <Divider style={styles.divider} />
-
-            <List.Item
-              title="Haftalık Raporlar"
-              description="İlerleme özet raporları"
-              left={(props) => <List.Icon {...props} icon="chart-line" />}
-              right={() => (
-                <Switch
-                  value={settings.weeklyReports}
-                  onValueChange={(value) => handleSettingChange('weeklyReports', value)}
-                />
-              )}
-              style={styles.listItem}
-            />
-          </Card.Content>
-        </Card>
-
-        {/* Data Management */}
-        <Card style={styles.settingsCard} mode="elevated">
-          <Card.Content>
-            <Title style={styles.sectionTitle}>Veri Yönetimi</Title>
-
-            <List.Item
-              title="Verileri Dışa Aktar"
-              description="Tüm verilerinizi JSON formatında indirin"
-              left={(props) => <List.Icon {...props} icon="download" />}
-              onPress={handleExportData}
-              style={styles.listItem}
-            />
-
-            <Divider style={styles.divider} />
-
-            <List.Item
-              title="Verileri Sıfırla"
-              description="Tüm uygulama verilerini temizle"
-              left={(props) => <List.Icon {...props} icon="delete" color="#EF4444" />}
-              titleStyle={{ color: '#EF4444' }}
-              onPress={handleResetData}
-              style={styles.listItem}
-            />
-          </Card.Content>
-        </Card>
-
-        {/* About Section */}
-        <Card style={styles.aboutCard} mode="elevated">
-          <Card.Content>
-            <Title style={styles.sectionTitle}>Uygulama Hakkında</Title>
-
-            <View style={styles.aboutInfo}>
-              <View style={styles.aboutItem}>
-                <MaterialCommunityIcons name="information" size={20} color="#6B7280" />
-                <View style={styles.aboutText}>
-                  <Title style={styles.aboutTitle}>ObsessLess</Title>
-                  <List.Item
-                    title="Versiyon 1.0.0"
-                    titleStyle={styles.aboutVersion}
-                  />
-                </View>
-              </View>
-
-              <List.Item
-                title="Gizlilik Politikası"
-                left={(props) => <List.Icon {...props} icon="shield-check" />}
-                right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                onPress={() => console.log('Privacy policy')}
-                style={styles.listItem}
-              />
-
-              <Divider style={styles.divider} />
-
-              <List.Item
-                title="Kullanım Koşulları"
-                left={(props) => <List.Icon {...props} icon="file-document" />}
-                right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                onPress={() => console.log('Terms of service')}
-                style={styles.listItem}
-              />
-
-              <Divider style={styles.divider} />
-
-              <List.Item
-                title="Destek"
-                left={(props) => <List.Icon {...props} icon="help-circle" />}
-                right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                onPress={() => console.log('Support')}
-                style={styles.listItem}
-              />
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Logout Button */}
-        <View style={styles.logoutContainer}>
-          <Button
-            mode="outlined"
-            icon="logout"
-            onPress={() => {
-              Alert.alert(
-                'Çıkış Yap',
-                'Uygulamadan çıkmak istediğinizden emin misiniz?',
-                [
-                  { text: 'İptal', style: 'cancel' },
-                  { text: 'Çıkış Yap', onPress: () => router.replace('/(auth)/login') }
-                ]
-              );
-            }}
-            style={styles.logoutButton}
-            textColor="#EF4444"
-          >
-            Çıkış Yap
-          </Button>
-        </View>
-      </ScrollView>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>ObsessLess v1.0.0</Text>
+        <Text style={styles.footerSubtext}>Made with ❤️ for mental wellness</Text>
+      </View>
     </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  profileCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
+  header: {
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    backgroundColor: Colors.light.background,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
   },
-  profileContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  headerTitle: {
+    fontSize: Typography.fontSize.xxl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.light.text,
+  },
+  headerSubtitle: {
+    fontSize: Typography.fontSize.md,
+    color: Colors.light.icon,
+    marginTop: Spacing.xs,
+  },
+  profileCard: {
+    backgroundColor: Colors.light.card,
+    margin: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    position: 'relative',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  profileGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   profileAvatar: {
-    backgroundColor: '#3B82F6',
+    width: 64,
+    height: 64,
+    borderRadius: BorderRadius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
   },
   profileInfo: {
-    marginLeft: 16,
     flex: 1,
   },
   profileName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: 'white',
   },
-  profileEditItem: {
-    paddingLeft: 0,
-    paddingVertical: 4,
+  profileEmail: {
+    fontSize: Typography.fontSize.md,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: Spacing.xs,
   },
-  profileEditText: {
-    fontSize: 14,
-    color: '#3B82F6',
+  profileJoinDate: {
+    fontSize: Typography.fontSize.sm,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: Spacing.xs,
   },
-  settingsCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
+  profileEditButton: {
+    position: 'absolute',
+    top: Spacing.md,
+    right: Spacing.md,
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingSection: {
+    marginBottom: Spacing.lg,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 8,
+    fontSize: Typography.fontSize.md,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.light.text,
+    marginBottom: Spacing.sm,
+    paddingHorizontal: Spacing.md,
   },
-  listItem: {
-    paddingHorizontal: 0,
+  sectionContent: {
+    backgroundColor: Colors.light.card,
+    marginHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  divider: {
-    marginVertical: 8,
-    backgroundColor: '#E5E7EB',
-  },
-  aboutCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
-  },
-  aboutInfo: {
-    marginTop: 8,
-  },
-  aboutItem: {
+  settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    padding: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
   },
-  aboutText: {
-    marginLeft: 12,
+  settingIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingContent: {
     flex: 1,
+    marginLeft: Spacing.md,
   },
-  aboutTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
+  settingTitle: {
+    fontSize: Typography.fontSize.md,
+    fontWeight: Typography.fontWeight.medium,
+    color: Colors.light.text,
   },
-  aboutVersion: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  logoutContainer: {
-    margin: 16,
-    marginBottom: 32,
+  settingSubtitle: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.light.icon,
+    marginTop: 2,
   },
   logoutButton: {
-    borderColor: '#EF4444',
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.light.card,
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.lg,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.error + '30',
+  },
+  logoutText: {
+    fontSize: Typography.fontSize.md,
+    fontWeight: Typography.fontWeight.medium,
+    color: Colors.light.error,
+    marginLeft: Spacing.sm,
+  },
+  footer: {
+    alignItems: 'center',
+    padding: Spacing.xl,
+  },
+  footerText: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.light.icon,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  footerSubtext: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.light.icon,
+    marginTop: Spacing.xs,
   },
 });

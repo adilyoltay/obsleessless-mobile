@@ -1,410 +1,443 @@
 
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Card, Title, Paragraph, Button, Chip, Avatar } from 'react-native-paper';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import ScreenLayout from '@/components/layout/ScreenLayout';
-import { YBOCSAssessment } from '@/components/assessment/YBOCSAssessment';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors, Spacing, BorderRadius, Typography } from '@/constants/Colors';
 import { useTranslation } from '@/hooks/useTranslation';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ScreenLayout } from '@/components/layout/ScreenLayout';
+import YBOCSAssessment from '@/components/assessment/YBOCSAssessment';
+
+const { width } = Dimensions.get('window');
 
 export default function AssessmentScreen() {
   const { t } = useTranslation();
-  const [showAssessment, setShowAssessment] = useState(false);
-  const [lastScore, setLastScore] = useState<any>(null);
-  const [assessmentHistory, setAssessmentHistory] = useState<any[]>([]);
+  const [activeSection, setActiveSection] = useState<'overview' | 'ybocs' | 'progress'>('overview');
 
-  useEffect(() => {
-    loadAssessmentData();
-  }, []);
+  const SectionCard = ({ 
+    title, 
+    description, 
+    icon, 
+    color, 
+    onPress,
+    isActive = false
+  }: {
+    title: string;
+    description: string;
+    icon: string;
+    color: string;
+    onPress: () => void;
+    isActive?: boolean;
+  }) => (
+    <TouchableOpacity
+      style={[styles.sectionCard, isActive && { borderColor: color, borderWidth: 2 }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <LinearGradient
+        colors={[color + '10', color + '05']}
+        style={styles.sectionCardGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+      <View style={[styles.sectionIconContainer, { backgroundColor: color + '20' }]}>
+        <MaterialCommunityIcons name={icon as any} size={28} color={color} />
+      </View>
+      <View style={styles.sectionContent}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text style={styles.sectionDescription}>{description}</Text>
+      </View>
+      <MaterialCommunityIcons 
+        name="chevron-right" 
+        size={20} 
+        color={isActive ? color : Colors.light.icon} 
+      />
+    </TouchableOpacity>
+  );
 
-  const loadAssessmentData = async () => {
-    try {
-      const lastScoreData = await AsyncStorage.getItem('lastYBOCSScore');
-      const historyData = await AsyncStorage.getItem('ybocs_history');
+  const ScoreCard = ({ 
+    label, 
+    score, 
+    maxScore, 
+    color,
+    trend 
+  }: {
+    label: string;
+    score: number;
+    maxScore: number;
+    color: string;
+    trend?: 'up' | 'down' | 'stable';
+  }) => {
+    const percentage = (score / maxScore) * 100;
+    
+    return (
+      <View style={styles.scoreCard}>
+        <View style={styles.scoreHeader}>
+          <Text style={styles.scoreLabel}>{label}</Text>
+          {trend && (
+            <MaterialCommunityIcons 
+              name={trend === 'up' ? 'trending-up' : trend === 'down' ? 'trending-down' : 'trending-neutral'} 
+              size={16} 
+              color={trend === 'up' ? Colors.light.error : trend === 'down' ? Colors.light.success : Colors.light.icon} 
+            />
+          )}
+        </View>
+        
+        <View style={styles.scoreContent}>
+          <Text style={[styles.scoreValue, { color }]}>{score}</Text>
+          <Text style={styles.scoreMaxValue}>/{maxScore}</Text>
+        </View>
+        
+        <View style={styles.progressBar}>
+          <View 
+            style={[
+              styles.progressFill, 
+              { width: `${percentage}%`, backgroundColor: color }
+            ]} 
+          />
+        </View>
+        
+        <Text style={styles.scorePercentage}>{percentage.toFixed(0)}%</Text>
+      </View>
+    );
+  };
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'overview':
+        return (
+          <View style={styles.overviewContent}>
+            <Text style={styles.contentTitle}>{t('assessment.currentScores')}</Text>
+            <Text style={styles.contentSubtitle}>
+              {t('assessment.lastUpdated')}: 2 gün önce
+            </Text>
+            
+            <View style={styles.scoresGrid}>
+              <ScoreCard
+                label={t('assessment.obsessions')}
+                score={12}
+                maxScore={20}
+                color={Colors.light.error}
+                trend="down"
+              />
+              <ScoreCard
+                label={t('assessment.compulsions')}
+                score={14}
+                maxScore={20}
+                color={Colors.light.warning}
+                trend="down"
+              />
+              <ScoreCard
+                label={t('assessment.totalScore')}
+                score={26}
+                maxScore={40}
+                color={Colors.light.info}
+                trend="stable"
+              />
+            </View>
+
+            <View style={styles.insightCard}>
+              <MaterialCommunityIcons 
+                name="lightbulb-on" 
+                size={24} 
+                color={Colors.light.success} 
+              />
+              <View style={styles.insightContent}>
+                <Text style={styles.insightTitle}>{t('assessment.insight')}</Text>
+                <Text style={styles.insightText}>
+                  {t('assessment.improvementNotice')}
+                </Text>
+              </View>
+            </View>
+          </View>
+        );
       
-      if (lastScoreData) {
-        setLastScore(JSON.parse(lastScoreData));
-      }
-      if (historyData) {
-        setAssessmentHistory(JSON.parse(historyData));
-      }
-    } catch (error) {
-      console.error('Error loading assessment data:', error);
+      case 'ybocs':
+        return (
+          <View style={styles.assessmentContent}>
+            <YBOCSAssessment />
+          </View>
+        );
+      
+      case 'progress':
+        return (
+          <View style={styles.progressContent}>
+            <Text style={styles.contentTitle}>{t('assessment.progressOverTime')}</Text>
+            <Text style={styles.contentSubtitle}>
+              {t('assessment.trackingProgress')}
+            </Text>
+            
+            {/* Placeholder for progress charts */}
+            <View style={styles.chartPlaceholder}>
+              <MaterialCommunityIcons 
+                name="chart-line" 
+                size={48} 
+                color={Colors.light.icon} 
+              />
+              <Text style={styles.chartPlaceholderText}>
+                {t('assessment.chartComingSoon')}
+              </Text>
+            </View>
+          </View>
+        );
+      
+      default:
+        return null;
     }
   };
 
-  const handleAssessmentComplete = () => {
-    setShowAssessment(false);
-    loadAssessmentData();
-  };
-
-  const getSeverityInfo = (score: number) => {
-    if (score < 8) return { level: 'Subklinik', color: '#10B981', icon: 'check-circle' };
-    if (score < 16) return { level: 'Hafif', color: '#F59E0B', icon: 'alert-circle' };
-    if (score < 24) return { level: 'Orta', color: '#EF4444', icon: 'minus-circle' };
-    if (score < 32) return { level: 'Şiddetli', color: '#DC2626', icon: 'alert-triangle' };
-    return { level: 'Aşırı Şiddetli', color: '#7C2D12', icon: 'alert-octagon' };
-  };
-
-  if (showAssessment) {
-    return (
-      <ScreenLayout scrollable={false} backgroundColor="#FAFAFA">
-        <YBOCSAssessment onComplete={handleAssessmentComplete} />
-      </ScreenLayout>
-    );
-  }
-
   return (
-    <ScreenLayout scrollable backgroundColor="#FAFAFA">
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Assessment Overview */}
-        <Card style={styles.overviewCard} mode="elevated">
-          <Card.Content>
-            <View style={styles.headerContainer}>
-              <Avatar.Icon 
-                size={48} 
-                icon="clipboard-text" 
-                style={styles.avatar}
-              />
-              <View style={styles.headerText}>
-                <Title style={styles.headerTitle}>Y-BOCS Değerlendirmesi</Title>
-                <Paragraph style={styles.headerSubtitle}>
-                  OKB semptomlarınızın şiddetini ölçün
-                </Paragraph>
-              </View>
-            </View>
-          </Card.Content>
-        </Card>
+    <ScreenLayout scrollable={false} backgroundColor={Colors.light.backgroundSecondary}>
+      {/* Header */}
+      <LinearGradient
+        colors={[Colors.light.info, '#2563eb']}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.headerTitle}>{t('assessment.title')}</Text>
+            <Text style={styles.headerSubtitle}>{t('assessment.subtitle')}</Text>
+          </View>
+          <View style={styles.headerIcon}>
+            <MaterialCommunityIcons name="clipboard-text" size={32} color="white" />
+          </View>
+        </View>
+      </LinearGradient>
 
-        {/* Current Score */}
-        {lastScore && (
-          <Card style={styles.scoreCard} mode="elevated">
-            <Card.Content>
-              <View style={styles.scoreHeader}>
-                <Title style={styles.scoreTitle}>Son Değerlendirme</Title>
-                <Chip 
-                  icon="calendar"
-                  style={styles.dateChip}
-                  textStyle={styles.chipText}
-                >
-                  {new Date(lastScore.timestamp).toLocaleDateString('tr-TR')}
-                </Chip>
-              </View>
-              
-              <View style={styles.scoreContent}>
-                <View style={styles.scoreDisplay}>
-                  <View style={[styles.scoreCircle, { backgroundColor: getSeverityInfo(lastScore.totalScore).color }]}>
-                    <Paragraph style={styles.scoreNumber}>{lastScore.totalScore}</Paragraph>
-                    <Paragraph style={styles.scoreMax}>/ 40</Paragraph>
-                  </View>
-                  <View style={styles.scoreDetails}>
-                    <Paragraph style={styles.severityLevel}>
-                      {getSeverityInfo(lastScore.totalScore).level}
-                    </Paragraph>
-                    <View style={styles.subscores}>
-                      <View style={styles.subscore}>
-                        <Paragraph style={styles.subscoreLabel}>Obsesyon</Paragraph>
-                        <Paragraph style={styles.subscoreValue}>{lastScore.obsessionScore}</Paragraph>
-                      </View>
-                      <View style={styles.subscore}>
-                        <Paragraph style={styles.subscoreLabel}>Kompülsiyon</Paragraph>
-                        <Paragraph style={styles.subscoreValue}>{lastScore.compulsionScore}</Paragraph>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </Card.Content>
-          </Card>
-        )}
+      {/* Section Navigation */}
+      <View style={styles.navigationSection}>
+        <SectionCard
+          title={t('assessment.overview')}
+          description={t('assessment.viewCurrentScores')}
+          icon="chart-donut"
+          color={Colors.light.info}
+          onPress={() => setActiveSection('overview')}
+          isActive={activeSection === 'overview'}
+        />
+        <SectionCard
+          title={t('assessment.ybocs')}
+          description={t('assessment.takeAssessment')}
+          icon="clipboard-check"
+          color={Colors.light.tint}
+          onPress={() => setActiveSection('ybocs')}
+          isActive={activeSection === 'ybocs'}
+        />
+        <SectionCard
+          title={t('assessment.progress')}
+          description={t('assessment.viewTrends')}
+          icon="trending-up"
+          color={Colors.light.success}
+          onPress={() => setActiveSection('progress')}
+          isActive={activeSection === 'progress'}
+        />
+      </View>
 
-        {/* Assessment Actions */}
-        <Card style={styles.actionsCard} mode="elevated">
-          <Card.Content>
-            <Title style={styles.cardTitle}>Değerlendirme İşlemleri</Title>
-            <View style={styles.actionButtons}>
-              <Button
-                mode="contained"
-                icon="play"
-                onPress={() => setShowAssessment(true)}
-                style={[styles.actionButton, { backgroundColor: '#3B82F6' }]}
-                contentStyle={styles.buttonContent}
-              >
-                {lastScore ? 'Yeniden Değerlendir' : 'Değerlendirme Başlat'}
-              </Button>
-            </View>
-            
-            <View style={styles.infoText}>
-              <MaterialCommunityIcons name="information" size={16} color="#6B7280" />
-              <Paragraph style={styles.infoDescription}>
-                Y-BOCS değerlendirmesi yaklaşık 5 dakika sürer ve 10 sorudan oluşur.
-              </Paragraph>
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Progress History */}
-        {assessmentHistory.length > 0 && (
-          <Card style={styles.historyCard} mode="elevated">
-            <Card.Content>
-              <Title style={styles.cardTitle}>İlerleme Geçmişi</Title>
-              <View style={styles.historyList}>
-                {assessmentHistory.slice(0, 5).map((assessment, index) => (
-                  <View key={index} style={styles.historyItem}>
-                    <View style={styles.historyDate}>
-                      <MaterialCommunityIcons name="calendar" size={16} color="#6B7280" />
-                      <Paragraph style={styles.historyDateText}>
-                        {new Date(assessment.timestamp).toLocaleDateString('tr-TR')}
-                      </Paragraph>
-                    </View>
-                    <View style={styles.historyScore}>
-                      <Paragraph style={styles.historyScoreValue}>
-                        {assessment.totalScore}/40
-                      </Paragraph>
-                      <Chip 
-                        style={[
-                          styles.historySeverityChip,
-                          { backgroundColor: getSeverityInfo(assessment.totalScore).color + '20' }
-                        ]}
-                        textStyle={[
-                          styles.historySeverityText,
-                          { color: getSeverityInfo(assessment.totalScore).color }
-                        ]}
-                      >
-                        {getSeverityInfo(assessment.totalScore).level}
-                      </Chip>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </Card.Content>
-          </Card>
-        )}
-
-        {/* Information Card */}
-        <Card style={styles.infoCard} mode="elevated">
-          <Card.Content>
-            <View style={styles.infoHeader}>
-              <MaterialCommunityIcons name="lightbulb" size={20} color="#F59E0B" />
-              <Title style={styles.infoTitle}>Y-BOCS Hakkında</Title>
-            </View>
-            <View style={styles.infoPoints}>
-              <Paragraph style={styles.infoPoint}>
-                • Yale-Brown Obsesif Kompulsif Ölçeği (Y-BOCS) altın standart değerlendirme aracıdır
-              </Paragraph>
-              <Paragraph style={styles.infoPoint}>
-                • 0-40 puan arasında değer alır
-              </Paragraph>
-              <Paragraph style={styles.infoPoint}>
-                • Düzenli değerlendirme ilerlemenizi takip etmenize yardımcı olur
-              </Paragraph>
-              <Paragraph style={styles.infoPoint}>
-                • Profesyonel tedaviyi destekleyici bir araçtır
-              </Paragraph>
-            </View>
-          </Card.Content>
-        </Card>
+      {/* Content */}
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {renderContent()}
       </ScrollView>
     </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  overviewCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
+  header: {
+    marginHorizontal: -Spacing.md,
+    marginTop: -Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xl,
+    borderBottomLeftRadius: BorderRadius.xl,
+    borderBottomRightRadius: BorderRadius.xl,
   },
-  headerContainer: {
+  headerContent: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  avatar: {
-    backgroundColor: '#3B82F6',
-  },
-  headerText: {
-    marginLeft: 16,
-    flex: 1,
-  },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
+    fontSize: Typography.fontSize.xxl,
+    fontWeight: Typography.fontWeight.bold,
+    color: 'white',
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: Typography.fontSize.md,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: Spacing.xs,
+  },
+  headerIcon: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: BorderRadius.full,
+    padding: Spacing.md,
+  },
+  navigationSection: {
+    padding: Spacing.md,
+    gap: Spacing.sm,
+  },
+  sectionCard: {
+    backgroundColor: Colors.light.card,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  sectionCardGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  sectionIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: BorderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sectionContent: {
+    flex: 1,
+    marginLeft: Spacing.md,
+  },
+  sectionTitle: {
+    fontSize: Typography.fontSize.md,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.light.text,
+  },
+  sectionDescription: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.light.icon,
+    marginTop: Spacing.xs,
+  },
+  content: {
+    flex: 1,
+  },
+  overviewContent: {
+    padding: Spacing.md,
+  },
+  assessmentContent: {
+    padding: Spacing.md,
+  },
+  progressContent: {
+    padding: Spacing.md,
+  },
+  contentTitle: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.light.text,
+  },
+  contentSubtitle: {
+    fontSize: Typography.fontSize.md,
+    color: Colors.light.icon,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xl,
+  },
+  scoresGrid: {
+    gap: Spacing.md,
+    marginBottom: Spacing.xl,
   },
   scoreCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.light.card,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   scoreHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: Spacing.sm,
   },
-  scoreTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  dateChip: {
-    backgroundColor: '#F3F4F6',
-  },
-  chipText: {
-    fontSize: 12,
+  scoreLabel: {
+    fontSize: Typography.fontSize.md,
+    fontWeight: Typography.fontWeight.medium,
+    color: Colors.light.text,
   },
   scoreContent: {
-    alignItems: 'center',
-  },
-  scoreDisplay: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 24,
+    alignItems: 'baseline',
+    marginBottom: Spacing.sm,
   },
-  scoreCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+  scoreValue: {
+    fontSize: Typography.fontSize.xxxl,
+    fontWeight: Typography.fontWeight.bold,
   },
-  scoreNumber: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
+  scoreMaxValue: {
+    fontSize: Typography.fontSize.lg,
+    color: Colors.light.icon,
+    marginLeft: Spacing.xs,
   },
-  scoreMax: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    opacity: 0.8,
+  progressBar: {
+    height: 8,
+    backgroundColor: Colors.light.accent,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.sm,
+    overflow: 'hidden',
   },
-  scoreDetails: {
-    alignItems: 'center',
+  progressFill: {
+    height: '100%',
+    borderRadius: BorderRadius.sm,
   },
-  severityLevel: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 12,
+  scorePercentage: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.light.icon,
+    textAlign: 'right',
   },
-  subscores: {
+  insightCard: {
+    backgroundColor: Colors.light.success + '10',
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
     flexDirection: 'row',
-    gap: 20,
+    alignItems: 'flex-start',
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.light.success,
   },
-  subscore: {
-    alignItems: 'center',
-  },
-  subscoreLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  subscoreValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  actionsCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 16,
-  },
-  actionButtons: {
-    marginBottom: 16,
-  },
-  actionButton: {
-    borderRadius: 12,
-  },
-  buttonContent: {
-    paddingVertical: 8,
-  },
-  infoText: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  infoDescription: {
-    fontSize: 14,
-    color: '#6B7280',
+  insightContent: {
     flex: 1,
+    marginLeft: Spacing.md,
   },
-  historyCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
+  insightTitle: {
+    fontSize: Typography.fontSize.md,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.light.text,
+    marginBottom: Spacing.xs,
   },
-  historyList: {
-    gap: 12,
-  },
-  historyItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  historyDate: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  historyDateText: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  historyScore: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  historyScoreValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  historySeverityChip: {
-    borderRadius: 12,
-  },
-  historySeverityText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  infoCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    marginBottom: 24,
-    backgroundColor: '#FEF3C7',
-  },
-  infoHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#92400E',
-    marginLeft: 8,
-  },
-  infoPoints: {
-    gap: 8,
-  },
-  infoPoint: {
-    fontSize: 14,
-    color: '#92400E',
+  insightText: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.light.icon,
     lineHeight: 20,
+  },
+  chartPlaceholder: {
+    backgroundColor: Colors.light.card,
+    padding: Spacing.xxl,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.lg,
+  },
+  chartPlaceholderText: {
+    fontSize: Typography.fontSize.md,
+    color: Colors.light.icon,
+    marginTop: Spacing.md,
+    textAlign: 'center',
   },
 });

@@ -1,322 +1,321 @@
 
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Card, Title, Paragraph, Button, Chip, ProgressBar } from 'react-native-paper';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import ScreenLayout from '@/components/layout/ScreenLayout';
-import { ERPExerciseLibrary } from '@/components/erp/ERPExerciseLibrary';
-import { ERPTimer } from '@/components/erp/ERPTimer';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors, Spacing, BorderRadius, Typography } from '@/constants/Colors';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useERPExercises, useERPSessionHistory } from '@/hooks/useERP';
+import { ScreenLayout } from '@/components/layout/ScreenLayout';
+import ERPTimer from '@/components/erp/ERPTimer';
+import ERPExerciseLibrary from '@/components/erp/ERPExerciseLibrary';
+
+const { width } = Dimensions.get('window');
 
 export default function ERPScreen() {
   const { t } = useTranslation();
-  const { data: exercises } = useERPExercises();
-  const [activeExercise, setActiveExercise] = useState(null);
-  const [progress, setProgress] = useState({ completed: 0, total: 0 });
-  const [todaySessions, setTodaySessions] = useState(0);
+  const [activeView, setActiveView] = useState<'exercises' | 'timer'>('exercises');
+  const [selectedExercise, setSelectedExercise] = useState(null);
 
-  useEffect(() => {
-    loadProgress();
-  }, []);
-
-  const loadProgress = async () => {
-    try {
-      // TODO: Implement proper ERP progress loading with React Query
-      setProgress({ completed: 2, total: 5 });
-      setTodaySessions(1);
-    } catch (error) {
-      console.error('Error loading ERP progress:', error);
-    }
-  };
-
-  const handleExerciseSelect = (exercise: any) => {
-    setActiveExercise(exercise);
-  };
-
-  const handleExerciseComplete = () => {
-    setActiveExercise(null);
-    loadProgress();
-  };
-
-  if (activeExercise) {
-    return (
-      <ScreenLayout scrollable={false} backgroundColor="#FAFAFA">
-        <ERPTimer
-          exercise={activeExercise}
-          onComplete={handleExerciseComplete}
+  const ViewButton = ({ 
+    view, 
+    label, 
+    icon, 
+    isActive 
+  }: {
+    view: 'exercises' | 'timer';
+    label: string;
+    icon: string;
+    isActive: boolean;
+  }) => (
+    <TouchableOpacity
+      style={[styles.viewButton, isActive && styles.viewButtonActive]}
+      onPress={() => setActiveView(view)}
+      activeOpacity={0.7}
+    >
+      {isActive && (
+        <LinearGradient
+          colors={[Colors.light.success, '#059669']}
+          style={styles.viewButtonGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         />
-      </ScreenLayout>
-    );
-  }
+      )}
+      <MaterialCommunityIcons
+        name={icon as any}
+        size={24}
+        color={isActive ? 'white' : Colors.light.icon}
+      />
+      <Text style={[styles.viewButtonText, isActive && styles.viewButtonTextActive]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const StatsCard = ({ 
+    title, 
+    value, 
+    subtitle, 
+    icon, 
+    color 
+  }: {
+    title: string;
+    value: string | number;
+    subtitle: string;
+    icon: string;
+    color: string;
+  }) => (
+    <View style={styles.statsCard}>
+      <View style={[styles.statsIconContainer, { backgroundColor: color + '20' }]}>
+        <MaterialCommunityIcons name={icon as any} size={20} color={color} />
+      </View>
+      <Text style={styles.statsValue}>{value}</Text>
+      <Text style={styles.statsTitle}>{title}</Text>
+      <Text style={styles.statsSubtitle}>{subtitle}</Text>
+    </View>
+  );
 
   return (
-    <ScreenLayout scrollable backgroundColor="#FAFAFA">
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Progress Overview */}
-        <Card style={styles.progressCard} mode="elevated">
-          <Card.Content>
-            <View style={styles.progressHeader}>
-              <MaterialCommunityIcons name="target" size={32} color="#3B82F6" />
-              <View style={styles.progressText}>
-                <Title style={styles.progressTitle}>ERP İlerlemen</Title>
-                <Paragraph style={styles.progressSubtitle}>
-                  Bugün {todaySessions} egzersiz tamamladın
-                </Paragraph>
-              </View>
+    <ScreenLayout scrollable={false} backgroundColor={Colors.light.backgroundSecondary}>
+      {/* Header with Progress */}
+      <LinearGradient
+        colors={[Colors.light.success, '#059669']}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.headerTitle}>{t('erp.title')}</Text>
+            <Text style={styles.headerSubtitle}>{t('erp.subtitle')}</Text>
+          </View>
+          <View style={styles.headerStats}>
+            <View style={styles.headerStatItem}>
+              <Text style={styles.headerStatValue}>15</Text>
+              <Text style={styles.headerStatLabel}>{t('erp.sessions')}</Text>
             </View>
-            
-            <View style={styles.progressStats}>
-              <View style={styles.statItem}>
-                <Paragraph style={styles.statValue}>{progress.completed}</Paragraph>
-                <Paragraph style={styles.statLabel}>Tamamlanan</Paragraph>
-              </View>
-              <View style={styles.progressBarContainer}>
-                <ProgressBar 
-                  progress={progress.total > 0 ? progress.completed / progress.total : 0} 
-                  color="#3B82F6"
-                  style={styles.progressBar}
-                />
-                <Paragraph style={styles.progressPercent}>
-                  {progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0}%
-                </Paragraph>
-              </View>
-              <View style={styles.statItem}>
-                <Paragraph style={styles.statValue}>{progress.total}</Paragraph>
-                <Paragraph style={styles.statLabel}>Toplam</Paragraph>
-              </View>
+            <View style={styles.headerStatDivider} />
+            <View style={styles.headerStatItem}>
+              <Text style={styles.headerStatValue}>240</Text>
+              <Text style={styles.headerStatLabel}>{t('erp.minutes')}</Text>
             </View>
-          </Card.Content>
-        </Card>
-
-        {/* Quick Start */}
-        <Card style={styles.quickStartCard} mode="elevated">
-          <Card.Content>
-            <Title style={styles.cardTitle}>Hızlı Başlangıç</Title>
-            <Paragraph style={styles.cardDescription}>
-              Öncelikli egzersizlerinize hızla başlayın
-            </Paragraph>
-            
-            <View style={styles.quickActions}>
-              <Button
-                mode="contained"
-                icon="play"
-                onPress={() => handleExerciseSelect({
-                  id: 'quick-basic',
-                  title: 'Temel ERP',
-                  description: '5 dakikalık temel egzersiz',
-                  duration: 300,
-                  difficulty: 'easy'
-                })}
-                style={[styles.quickButton, { backgroundColor: '#10B981' }]}
-                contentStyle={styles.buttonContent}
-              >
-                Temel ERP
-              </Button>
-              
-              <Button
-                mode="contained"
-                icon="lightning-bolt"
-                onPress={() => handleExerciseSelect({
-                  id: 'quick-intensive',
-                  title: 'Yoğun ERP',
-                  description: '10 dakikalık yoğun egzersiz',
-                  duration: 600,
-                  difficulty: 'hard'
-                })}
-                style={[styles.quickButton, { backgroundColor: '#F59E0B' }]}
-                contentStyle={styles.buttonContent}
-              >
-                Yoğun ERP
-              </Button>
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Difficulty Levels */}
-        <Card style={styles.levelsCard} mode="elevated">
-          <Card.Content>
-            <Title style={styles.cardTitle}>Zorluk Seviyeleri</Title>
-            <View style={styles.levelChips}>
-              <Chip 
-                icon="leaf" 
-                style={[styles.levelChip, { backgroundColor: '#D1FAE5' }]}
-                textStyle={{ color: '#047857' }}
-              >
-                Kolay
-              </Chip>
-              <Chip 
-                icon="trending-up" 
-                style={[styles.levelChip, { backgroundColor: '#FEF3C7' }]}
-                textStyle={{ color: '#92400E' }}
-              >
-                Orta
-              </Chip>
-              <Chip 
-                icon="fire" 
-                style={[styles.levelChip, { backgroundColor: '#FEE2E2' }]}
-                textStyle={{ color: '#DC2626' }}
-              >
-                Zor
-              </Chip>
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Exercise Library */}
-        <View style={styles.libraryContainer}>
-          <ERPExerciseLibrary onExerciseSelect={handleExerciseSelect} />
+          </View>
         </View>
+      </LinearGradient>
 
-        {/* Tips Card */}
-        <Card style={styles.tipsCard} mode="elevated">
-          <Card.Content>
-            <View style={styles.tipHeader}>
-              <MaterialCommunityIcons name="lightbulb" size={20} color="#F59E0B" />
-              <Title style={styles.tipTitle}>ERP İpuçları</Title>
-            </View>
-            <View style={styles.tipsList}>
-              <Paragraph style={styles.tipText}>
-                • ERP egzersizlerini düzenli olarak yapın
-              </Paragraph>
-              <Paragraph style={styles.tipText}>
-                • Anksiyetenizin doğal olarak azalmasını bekleyin
-              </Paragraph>
-              <Paragraph style={styles.tipText}>
-                • Kompülsiyonlarınıza direnin ve sabırlı olun
-              </Paragraph>
-            </View>
-          </Card.Content>
-        </Card>
-      </ScrollView>
+      {/* Weekly Progress Cards */}
+      <View style={styles.progressSection}>
+        <Text style={styles.progressTitle}>{t('erp.weeklyProgress')}</Text>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.progressScrollContainer}
+        >
+          <StatsCard
+            title={t('erp.totalTime')}
+            value="45m"
+            subtitle={t('erp.thisWeek')}
+            icon="clock-outline"
+            color={Colors.light.info}
+          />
+          <StatsCard
+            title={t('erp.avgAnxiety')}
+            value="6.2"
+            subtitle={t('erp.decreased')}
+            icon="trending-down"
+            color={Colors.light.success}
+          />
+          <StatsCard
+            title={t('erp.resistance')}
+            value="8.1"
+            subtitle={t('erp.improved')}
+            icon="shield-check"
+            color={Colors.light.warning}
+          />
+        </ScrollView>
+      </View>
+
+      {/* View Toggle */}
+      <View style={styles.viewToggle}>
+        <ViewButton
+          view="exercises"
+          label={t('erp.exercises')}
+          icon="format-list-bulleted"
+          isActive={activeView === 'exercises'}
+        />
+        <ViewButton
+          view="timer"
+          label={t('erp.session')}
+          icon="play-circle"
+          isActive={activeView === 'timer'}
+        />
+      </View>
+
+      {/* Content */}
+      <View style={styles.content}>
+        {activeView === 'exercises' ? (
+          <ERPExerciseLibrary 
+            onExerciseSelect={(exercise) => {
+              setSelectedExercise(exercise);
+              setActiveView('timer');
+            }}
+          />
+        ) : (
+          <ERPTimer selectedExercise={selectedExercise} />
+        )}
+      </View>
     </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  progressCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
+  header: {
+    marginHorizontal: -Spacing.md,
+    marginTop: -Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xl,
+    borderBottomLeftRadius: BorderRadius.xl,
+    borderBottomRightRadius: BorderRadius.xl,
   },
-  progressHeader: {
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: Typography.fontSize.xxl,
+    fontWeight: Typography.fontWeight.bold,
+    color: 'white',
+  },
+  headerSubtitle: {
+    fontSize: Typography.fontSize.md,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: Spacing.xs,
+  },
+  headerStats: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
   },
-  progressText: {
-    marginLeft: 16,
-    flex: 1,
+  headerStatItem: {
+    alignItems: 'center',
+  },
+  headerStatValue: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    color: 'white',
+  },
+  headerStatLabel: {
+    fontSize: Typography.fontSize.xs,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 2,
+  },
+  headerStatDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    marginHorizontal: Spacing.md,
+  },
+  progressSection: {
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   progressTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.light.text,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.md,
   },
-  progressSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
+  progressScrollContainer: {
+    paddingHorizontal: Spacing.md,
+    gap: Spacing.md,
   },
-  progressStats: {
+  statsCard: {
+    backgroundColor: Colors.light.card,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    minWidth: 110,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  statsIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  statsValue: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.light.text,
+  },
+  statsTitle: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.medium,
+    color: Colors.light.text,
+    textAlign: 'center',
+    marginTop: Spacing.xs,
+  },
+  statsSubtitle: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.light.icon,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  viewToggle: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
   },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 4,
-  },
-  progressBarContainer: {
+  viewButton: {
     flex: 1,
-    marginHorizontal: 20,
-    alignItems: 'center',
-  },
-  progressBar: {
-    width: '100%',
-    height: 8,
-    borderRadius: 4,
-  },
-  progressPercent: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 4,
-  },
-  quickStartCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  cardDescription: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 16,
-  },
-  quickActions: {
     flexDirection: 'row',
-    gap: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.light.accent,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  quickButton: {
+  viewButtonActive: {
+    backgroundColor: 'transparent',
+  },
+  viewButtonGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  viewButtonText: {
+    marginLeft: Spacing.xs,
+    fontSize: Typography.fontSize.md,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.light.icon,
+  },
+  viewButtonTextActive: {
+    color: 'white',
+  },
+  content: {
     flex: 1,
-    borderRadius: 12,
-  },
-  buttonContent: {
-    paddingVertical: 8,
-  },
-  levelsCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
-  },
-  levelChips: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-  },
-  levelChip: {
-    borderRadius: 20,
-  },
-  libraryContainer: {
-    marginTop: 8,
-  },
-  tipsCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    marginBottom: 24,
-    backgroundColor: '#FEF3C7',
-  },
-  tipHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  tipTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#92400E',
-    marginLeft: 8,
-  },
-  tipsList: {
-    gap: 4,
-  },
-  tipText: {
-    fontSize: 14,
-    color: '#92400E',
-    lineHeight: 20,
+    paddingHorizontal: Spacing.md,
   },
 });
