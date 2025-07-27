@@ -48,9 +48,15 @@ export default function OnboardingScreen() {
     router.replace('/(tabs)');
   };
 
-  const handleProfileComplete = () => {
+  const handleProfileComplete = async () => {
     // Profile tamamlandığında ana sayfaya yönlendir
-    router.replace('/(tabs)');
+    try {
+      await AsyncStorage.setItem('profileCompleted', 'true');
+      console.log('✅ Profile completed, navigating to main app');
+      router.replace('/(tabs)');
+    } catch (error) {
+      console.error('Profile completion save error:', error);
+    }
   };
 
   // Profile step için özel render

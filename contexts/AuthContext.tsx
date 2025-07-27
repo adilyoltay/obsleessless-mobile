@@ -79,8 +79,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const onAuthStateChangedHandler = (firebaseUser: FirebaseUser | null) => {
-    console.log('🔄 Auth State Changed:', firebaseUser ? 'User logged in' : 'User logged out'); // Debug log
+  const onAuthStateChangedHandler = async (firebaseUser: FirebaseUser | null) => {
+    console.log('🔄 Auth State Changed:', firebaseUser ? 'User logged in' : 'User logged out');
     if (firebaseUser) {
       const userData: User = {
         uid: firebaseUser.uid,
@@ -89,6 +89,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         emailVerified: firebaseUser.emailVerified,
       };
       setUser(userData);
+      
+      // Check if user has completed profile
+      try {
+        const profileCompleted = await AsyncStorage.getItem('profileCompleted');
+        const userProfile = await AsyncStorage.getItem(`ocd_profile_${firebaseUser.uid}`);
+        
+        if (!profileCompleted || !userProfile) {
+          console.log('👤 Profile not completed, redirecting to onboarding');
+          // Profile will be checked in NavigationGuard
+        }
+      } catch (error) {
+        console.error('Profile check error:', error);
+      }
     } else {
       setUser(null);
     }

@@ -6,6 +6,7 @@ import { Picker } from '@/components/ui/Picker';
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/contexts/AuthContext';
+import { router } from 'expo-router';
 
 const OBSESSION_TYPES = [
   { id: 'contamination', label: 'Kirlenme/Bulaşma Korkusu' },
@@ -161,6 +162,11 @@ export function OCDProfileForm() {
         text1: 'Profil Kaydedildi',
         text2: 'OKB profiliniz başarıyla oluşturuldu',
       });
+
+      // Navigate to main app after successful save
+      setTimeout(() => {
+        router.replace('/(tabs)');
+      }, 1500);
 
     } catch (error) {
       console.error('Profile save error:', error);

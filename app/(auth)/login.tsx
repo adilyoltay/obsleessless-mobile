@@ -26,7 +26,7 @@ export default function LoginScreen() {
     try {
       clearError();
       await login(email, password);
-      router.replace('/(tabs)');
+      // Navigation will be handled by NavigationGuard
     } catch (error) {
       // Error handled in AuthContext
     }
@@ -36,18 +36,25 @@ export default function LoginScreen() {
     try {
       clearError();
       await loginWithGoogle();
-      Toast.show({
-        type: 'success',
-        text1: '🎉 Giriş Başarılı',
-        text2: 'Google hesabınızla giriş yapıldı'
-      });
-      router.replace('/(tabs)');
+      
+      // Check if login was successful (not cancelled)
+      if (!error) {
+        Toast.show({
+          type: 'success',
+          text1: '🎉 Giriş Başarılı',
+          text2: 'Google hesabınızla giriş yapıldı'
+        });
+        // Navigation will be handled by NavigationGuard
+      }
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: '❌ Giriş Hatası',
-        text2: error.message || 'Google giriş başarısız'
-      });
+      // Only show error if it's not a user cancellation
+      if (!error.message?.includes('iptal edildi') && !error.message?.includes('dismiss')) {
+        Toast.show({
+          type: 'error',
+          text1: '❌ Giriş Hatası',
+          text2: error.message || 'Google giriş başarısız'
+        });
+      }
     }
   };
 

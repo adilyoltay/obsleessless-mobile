@@ -16,6 +16,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { queryClient } from '@/lib/queryClient';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { NavigationGuard } from '@/components/navigation/NavigationGuard';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -40,7 +41,7 @@ function RootLayoutNav() {
   useEffect(() => {
     if (!isLoading) {
       console.log('Navigation decision:', { isAuthenticated, isLoading });
-      
+
       if (!isAuthenticated) {
         router.replace('/(auth)/login');
       } else {
@@ -86,8 +87,11 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <LanguageProvider>
           <AuthProvider>
-            <NotificationProvider>
+            <NavigationGuard>
               <RootLayoutNav />
+            </NavigationGuard>
+            <NotificationProvider>
+              
             </NotificationProvider>
           </AuthProvider>
         </LanguageProvider>
