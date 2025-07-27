@@ -1,475 +1,495 @@
-import React, { useState, useMemo } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { Text, Card, Chip, Button, Searchbar, IconButton } from 'react-native-paper';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { ERPExercise, ERPCategory, ERPDifficulty } from '@/types/erp';
-import {
-  ERP_EXERCISES,
-  ERP_CATEGORIES,
-  getERPCategory,
-  getDifficultyColor,
-  getDifficultyLabel,
-  getERPExercisesByCategory,
-  getERPExercisesByDifficulty,
-} from '@/constants/erpExercises';
 
-interface Props {
-  onExerciseSelect?: (exercise: ERPExercise) => void;
-  showHeader?: boolean;
-  maxItems?: number;
-  filterByCompulsion?: string;
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Card, Title, Paragraph, Button, Chip, Avatar, Searchbar, List, Badge } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ERP_EXERCISES, ERP_CATEGORIES, getERPExercisesByCategory, getERPExercisesByCompulsion, getDifficultyColor } from '@/constants/erpExercises';
+import { ERPExercise, ERPCategory } from '@/types/erp';
+import { useTranslation } from '@/hooks/useTranslation';
+
+interface ERPExerciseLibraryProps {
+  onSelectExercise: (exercise: ERPExercise) => void;
+  selectedCompulsionType?: string;
 }
 
-export function ERPExerciseLibrary({ 
-  onExerciseSelect, 
-  showHeader = true, 
-  maxItems,
-  filterByCompulsion 
-}: Props) {
-  const { language } = useLanguage();
-  
+export function ERPExerciseLibrary({ onSelectExercise, selectedCompulsionType }: ERPExerciseLibraryProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ERPCategory | 'all'>('all');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<ERPDifficulty | 'all'>('all');
-  const [showFilters, setShowFilters] = useState(false);
+  const [filteredExercises, setFilteredExercises] = useState<ERPExercise[]>(ERP_EXERCISES);
 
-  // Filter exercises
-  const filteredExercises = useMemo(() => {
-    let exercises = [...ERP_EXERCISES];
+  useEffect(() => {
+    let exercises = ERP_EXERCISES;
 
     // Filter by compulsion type if provided
-    if (filterByCompulsion) {
-      exercises = exercises.filter(exercise => 
-        exercise.relatedCompulsions.includes(filterByCompulsion)
-      );
+    if (selectedCompulsionType) {
+      exercises = getERPExercisesByCompulsion(selectedCompulsionType);
     }
 
     // Filter by category
     if (selectedCategory !== 'all') {
-      exercises = exercises.filter(exercise => exercise.category === selectedCategory);
-    }
-
-    // Filter by difficulty
-    if (selectedDifficulty !== 'all') {
-      exercises = exercises.filter(exercise => exercise.difficulty === selectedDifficulty);
+      exercises = exercises.filter(ex => ex.category === selectedCategory);
     }
 
     // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      exercises = exercises.filter(exercise => {
-        const title = (language === 'tr' ? exercise.title : exercise.titleEn).toLowerCase();
-        const description = (language === 'tr' ? exercise.description : exercise.descriptionEn).toLowerCase();
-        const tags = exercise.tags.join(' ').toLowerCase();
-        
-        return title.includes(query) || 
-               description.includes(query) || 
-               tags.includes(query);
-      });
+    if (searchQuery) {
+      exercises = exercises.filter(ex =>
+        ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        ex.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
 
-    // Apply max items limit
-    if (maxItems) {
-      exercises = exercises.slice(0, maxItems);
-    }
+    setFilteredExercises(exercises);
+  }, [searchQuery, selectedCategory, selectedCompulsionType]);
 
-    return exercises;
-  }, [searchQuery, selectedCategory, selectedDifficulty, filterByCompulsion, maxItems, language]);
-
-  // Clear all filters
-  const clearFilters = () => {
-    setSearchQuery('');
-    setSelectedCategory('all');
-    setSelectedDifficulty('all');
+  const getDifficultyLabel = (difficulty: number) => {
+    const labels = ['', 'Çok Kolay', 'Kolay', 'Orta', 'Zor', 'Çok Zor'];
+    return labels[difficulty] || 'Bilinmiyor';
   };
 
-  // Render exercise card
-  const renderExerciseCard = (exercise: ERPExercise) => {
-    const category = getERPCategory(exercise.category);
-    const difficultyColor = getDifficultyColor(exercise.difficulty);
-    const difficultyLabel = getDifficultyLabel(exercise.difficulty, language === 'en');
+  const getDifficultyColorByLevel = (difficulty: number) => {
+    const colors = ['', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#DC2626'];
+    return colors[difficulty] || '#6B7280';
+  };
 
-    return (
-      <TouchableOpacity
-        key={exercise.id}
-        onPress={() => onExerciseSelect?.(exercise)}
-        style={styles.exerciseCardContainer}
-      >
-        <Card style={styles.exerciseCard}>
-          <Card.Content>
-            {/* Header */}
-            <View style={styles.exerciseHeader}>
-              <View style={styles.exerciseInfo}>
-                <Text variant="titleMedium" style={styles.exerciseTitle}>
-                  {language === 'tr' ? exercise.title : exercise.titleEn}
-                </Text>
-                <Text variant="bodySmall" style={styles.exerciseDescription}>
-                  {language === 'tr' ? exercise.description : exercise.descriptionEn}
-                </Text>
-              </View>
-              <View style={styles.exerciseMetadata}>
-                <Chip 
-                  mode="outlined" 
-                  compact 
-                  style={[styles.categoryChip, { borderColor: category.color }]}
-                  textStyle={{ color: category.color, fontSize: 10 }}
-                >
-                  {category.icon} {language === 'tr' ? category.name : category.nameEn}
-                </Chip>
-              </View>
-            </View>
-
-            {/* Details */}
-            <View style={styles.exerciseDetails}>
-              <View style={styles.detailRow}>
-                <View style={styles.detailItem}>
-                  <Text variant="bodySmall" style={styles.detailLabel}>Zorluk</Text>
-                  <Chip 
-                    mode="flat" 
-                    compact 
-                    style={[styles.difficultyChip, { backgroundColor: difficultyColor + '20' }]}
-                    textStyle={{ color: difficultyColor, fontSize: 10 }}
-                  >
-                    {difficultyLabel}
-                  </Chip>
-                </View>
-                
-                <View style={styles.detailItem}>
-                  <Text variant="bodySmall" style={styles.detailLabel}>Süre</Text>
-                  <Text variant="bodySmall" style={styles.detailValue}>
-                    {exercise.duration} dk
-                  </Text>
-                </View>
-
-                <View style={styles.detailItem}>
-                  <Text variant="bodySmall" style={styles.detailLabel}>Hedef Kaygı</Text>
-                  <Text variant="bodySmall" style={styles.detailValue}>
-                    {exercise.targetAnxiety}/10
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Tags */}
-            <View style={styles.tagsRow}>
-              {exercise.tags.slice(0, 3).map((tag, index) => (
-                <Chip 
-                  key={index}
-                  mode="outlined"
-                  compact
-                  style={styles.tagChip}
-                  textStyle={{ fontSize: 9 }}
-                >
-                  {tag}
-                </Chip>
-              ))}
-              {exercise.tags.length > 3 && (
-                <Text variant="bodySmall" style={styles.moreTagsText}>
-                  +{exercise.tags.length - 3}
-                </Text>
-              )}
-            </View>
-
-            {/* Warnings if any */}
-            {exercise.warnings && exercise.warnings.length > 0 && (
-              <View style={styles.warningSection}>
-                <Text variant="bodySmall" style={styles.warningText}>
-                  ⚠️ Uyarı: Bu egzersiz ileri seviye bilgi gerektirir
-                </Text>
-              </View>
-            )}
-          </Card.Content>
-        </Card>
-      </TouchableOpacity>
-    );
+  const getAnxietyColor = (level: number) => {
+    if (level <= 3) return '#10B981';
+    if (level <= 6) return '#F59E0B';
+    return '#EF4444';
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
-      {showHeader && (
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <Text variant="titleLarge" style={styles.headerTitle}>
-              ERP Egzersiz Kütüphanesi
-            </Text>
-            <Text variant="bodyMedium" style={styles.headerSubtitle}>
-              {filteredExercises.length} egzersiz bulundu
-            </Text>
-          </View>
-          <IconButton
-            icon={showFilters ? 'filter' : 'filter-outline'}
-            mode={showFilters ? 'contained' : 'outlined'}
-            onPress={() => setShowFilters(!showFilters)}
-            size={20}
-          />
-        </View>
-      )}
-
-      {/* Search */}
-      <View style={styles.searchSection}>
-        <Searchbar
-          placeholder="Egzersiz ara..."
-          onChangeText={setSearchQuery}
-          value={searchQuery}
-          style={styles.searchBar}
-        />
-      </View>
-
-      {/* Filters */}
-      {showFilters && (
-        <View style={styles.filtersSection}>
-          {/* Category Filter */}
-          <View style={styles.filterGroup}>
-            <Text variant="titleSmall" style={styles.filterTitle}>Kategori</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.filterChips}>
-                <Chip
-                  mode={selectedCategory === 'all' ? 'flat' : 'outlined'}
-                  onPress={() => setSelectedCategory('all')}
-                  style={styles.filterChip}
-                >
-                  Tümü
-                </Chip>
-                {ERP_CATEGORIES.map(category => (
-                  <Chip
-                    key={category.id}
-                    mode={selectedCategory === category.id ? 'flat' : 'outlined'}
-                    onPress={() => setSelectedCategory(category.id)}
-                    style={styles.filterChip}
-                  >
-                    {category.icon} {language === 'tr' ? category.name : category.nameEn}
-                  </Chip>
-                ))}
-              </View>
-            </ScrollView>
-          </View>
-
-          {/* Difficulty Filter */}
-          <View style={styles.filterGroup}>
-            <Text variant="titleSmall" style={styles.filterTitle}>Zorluk</Text>
-            <View style={styles.filterChips}>
-              <Chip
-                mode={selectedDifficulty === 'all' ? 'flat' : 'outlined'}
-                onPress={() => setSelectedDifficulty('all')}
-                style={styles.filterChip}
-              >
-                Tümü
-              </Chip>
-              {(['beginner', 'intermediate', 'advanced', 'expert'] as ERPDifficulty[]).map(difficulty => (
-                <Chip
-                  key={difficulty}
-                  mode={selectedDifficulty === difficulty ? 'flat' : 'outlined'}
-                  onPress={() => setSelectedDifficulty(difficulty)}
-                  style={[styles.filterChip, { borderColor: getDifficultyColor(difficulty) }]}
-                >
-                  {getDifficultyLabel(difficulty, language === 'en')}
-                </Chip>
-              ))}
+      <Card style={styles.headerCard} mode="elevated">
+        <Card.Content>
+          <View style={styles.headerContainer}>
+            <Avatar.Icon size={48} icon="dumbbell" style={styles.headerIcon} />
+            <View style={styles.headerText}>
+              <Title style={styles.headerTitle}>ERP Egzersiz Kütüphanesi</Title>
+              <Paragraph style={styles.headerSubtitle}>
+                Maruz bırakma ve tepki önleme egzersizleri
+              </Paragraph>
             </View>
           </View>
+        </Card.Content>
+      </Card>
 
-          {/* Clear Filters */}
-          <Button mode="outlined" onPress={clearFilters} style={styles.clearButton}>
-            Filtreleri Temizle
-          </Button>
-        </View>
-      )}
+      {/* Search */}
+      <Searchbar
+        placeholder="Egzersiz ara..."
+        onChangeText={setSearchQuery}
+        value={searchQuery}
+        style={styles.searchBar}
+      />
+
+      {/* Category Filters */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesContainer}>
+        <TouchableOpacity
+          onPress={() => setSelectedCategory('all')}
+          style={[
+            styles.categoryChip,
+            selectedCategory === 'all' && styles.selectedCategoryChip
+          ]}
+        >
+          <Chip
+            selected={selectedCategory === 'all'}
+            onPress={() => setSelectedCategory('all')}
+            style={styles.chip}
+          >
+            Tümü
+          </Chip>
+        </TouchableOpacity>
+
+        {ERP_CATEGORIES.map(category => (
+          <TouchableOpacity
+            key={category.id}
+            onPress={() => setSelectedCategory(category.id)}
+            style={[
+              styles.categoryChip,
+              selectedCategory === category.id && styles.selectedCategoryChip
+            ]}
+          >
+            <Chip
+              selected={selectedCategory === category.id}
+              onPress={() => setSelectedCategory(category.id)}
+              style={styles.chip}
+              icon={() => <MaterialCommunityIcons name="dumbbell" size={16} />}
+            >
+              {category.name}
+            </Chip>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Exercise Stats */}
+      <Card style={styles.statsCard} mode="outlined">
+        <Card.Content>
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{filteredExercises.length}</Text>
+              <Text style={styles.statLabel}>Egzersiz</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {Math.round(filteredExercises.reduce((sum, ex) => sum + ex.duration, 0) / filteredExercises.length || 0)}
+              </Text>
+              <Text style={styles.statLabel}>Ort. Süre (dk)</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {Math.round(filteredExercises.reduce((sum, ex) => sum + ex.difficulty, 0) / filteredExercises.length || 0)}
+              </Text>
+              <Text style={styles.statLabel}>Ort. Zorluk</Text>
+            </View>
+          </View>
+        </Card.Content>
+      </Card>
 
       {/* Exercise List */}
-      <ScrollView 
-        style={styles.exerciseList}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.exerciseListContent}
-      >
-        {filteredExercises.length > 0 ? (
-          filteredExercises.map(renderExerciseCard)
-        ) : (
-          <View style={styles.emptyState}>
-            <Text variant="headlineSmall" style={styles.emptyTitle}>
-              📋 Egzersiz Bulunamadı
-            </Text>
-            <Text variant="bodyMedium" style={styles.emptySubtitle}>
-              Arama kriterlerinizi değiştirip tekrar deneyin
-            </Text>
-            <Button mode="outlined" onPress={clearFilters} style={styles.emptyButton}>
-              Filtreleri Temizle
-            </Button>
-          </View>
-        )}
-      </ScrollView>
-    </View>
+      <View style={styles.exerciseList}>
+        {filteredExercises.map(exercise => (
+          <Card key={exercise.id} style={styles.exerciseCard} mode="elevated">
+            <Card.Content>
+              <View style={styles.exerciseHeader}>
+                <View style={styles.exerciseInfo}>
+                  <Title style={styles.exerciseTitle}>{exercise.name}</Title>
+                  <View style={styles.exerciseMeta}>
+                    <Badge 
+                      style={[styles.categoryBadge, { backgroundColor: ERP_CATEGORIES.find(c => c.id === exercise.category)?.color }]}
+                    >
+                      {ERP_CATEGORIES.find(c => c.id === exercise.category)?.name}
+                    </Badge>
+                    <Badge 
+                      style={[styles.difficultyBadge, { backgroundColor: getDifficultyColorByLevel(exercise.difficulty) }]}
+                    >
+                      {getDifficultyLabel(exercise.difficulty)}
+                    </Badge>
+                  </View>
+                </View>
+                <Avatar.Icon 
+                  size={40} 
+                  icon="dumbbell" 
+                  style={[styles.exerciseIcon, { backgroundColor: getDifficultyColorByLevel(exercise.difficulty) }]}
+                />
+              </View>
+
+              <Paragraph style={styles.exerciseDescription}>
+                {exercise.description}
+              </Paragraph>
+
+              {/* Exercise Details */}
+              <View style={styles.exerciseDetails}>
+                <View style={styles.detailItem}>
+                  <MaterialCommunityIcons name="clock-outline" size={16} color="#6B7280" />
+                  <Text style={styles.detailText}>{exercise.duration} dakika</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <MaterialCommunityIcons name="target" size={16} color="#6B7280" />
+                  <Text style={styles.detailText}>
+                    {exercise.targetCompulsion.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ')}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Anxiety Levels */}
+              <View style={styles.anxietyContainer}>
+                <Text style={styles.anxietyTitle}>Beklenen Anksiyete Seviyeleri:</Text>
+                <View style={styles.anxietyLevels}>
+                  <View style={styles.anxietyItem}>
+                    <Text style={styles.anxietyLabel}>Başlangıç</Text>
+                    <View style={[styles.anxietyIndicator, { backgroundColor: getAnxietyColor(exercise.expectedAnxiety.initial) }]}>
+                      <Text style={styles.anxietyValue}>{exercise.expectedAnxiety.initial}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.anxietyItem}>
+                    <Text style={styles.anxietyLabel}>Pik</Text>
+                    <View style={[styles.anxietyIndicator, { backgroundColor: getAnxietyColor(exercise.expectedAnxiety.peak) }]}>
+                      <Text style={styles.anxietyValue}>{exercise.expectedAnxiety.peak}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.anxietyItem}>
+                    <Text style={styles.anxietyLabel}>Final</Text>
+                    <View style={[styles.anxietyIndicator, { backgroundColor: getAnxietyColor(exercise.expectedAnxiety.final) }]}>
+                      <Text style={styles.anxietyValue}>{exercise.expectedAnxiety.final}</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Instructions Preview */}
+              <List.Section style={styles.instructionsSection}>
+                <List.Subheader>Talimatlar:</List.Subheader>
+                {exercise.instructions.slice(0, 2).map((instruction, index) => (
+                  <List.Item
+                    key={index}
+                    title={instruction}
+                    left={() => <List.Icon icon="check-circle" />}
+                    titleNumberOfLines={2}
+                    style={styles.instructionItem}
+                  />
+                ))}
+                {exercise.instructions.length > 2 && (
+                  <Text style={styles.moreInstructions}>
+                    +{exercise.instructions.length - 2} daha fazla adım
+                  </Text>
+                )}
+              </List.Section>
+
+              {/* Safety Notes */}
+              {exercise.safetyNotes && exercise.safetyNotes.length > 0 && (
+                <View style={styles.safetyNotesContainer}>
+                  <View style={styles.safetyHeader}>
+                    <MaterialCommunityIcons name="shield-alert" size={16} color="#F59E0B" />
+                    <Text style={styles.safetyTitle}>Güvenlik Notları:</Text>
+                  </View>
+                  {exercise.safetyNotes.slice(0, 1).map((note, index) => (
+                    <Text key={index} style={styles.safetyNote}>• {note}</Text>
+                  ))}
+                </View>
+              )}
+
+              {/* Action Button */}
+              <Button
+                mode="contained"
+                onPress={() => onSelectExercise(exercise)}
+                style={[styles.selectButton, { backgroundColor: getDifficultyColorByLevel(exercise.difficulty) }]}
+                contentStyle={styles.buttonContent}
+              >
+                Egzersizi Başlat
+              </Button>
+            </Card.Content>
+          </Card>
+        ))}
+      </View>
+
+      {filteredExercises.length === 0 && (
+        <Card style={styles.emptyCard} mode="outlined">
+          <Card.Content style={styles.emptyContent}>
+            <MaterialCommunityIcons name="magnify" size={48} color="#9CA3AF" />
+            <Title style={styles.emptyTitle}>Egzersiz Bulunamadı</Title>
+            <Paragraph style={styles.emptySubtitle}>
+              Arama kriterlerinizi değiştirmeyi deneyin
+            </Paragraph>
+          </Card.Content>
+        </Card>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FAFAFA',
   },
-  header: {
+  headerCard: {
+    margin: 16,
+    marginBottom: 12,
+  },
+  headerContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
-  headerContent: {
+  headerIcon: {
+    backgroundColor: '#3B82F6',
+    marginRight: 16,
+  },
+  headerText: {
     flex: 1,
   },
   headerTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#1F2937',
     marginBottom: 4,
   },
   headerSubtitle: {
-    color: '#6B7280',
-  },
-  searchSection: {
-    padding: 16,
-    backgroundColor: '#FFFFFF',
+    fontSize: 14,
+    opacity: 0.7,
   },
   searchBar: {
-    elevation: 0,
-    backgroundColor: '#F3F4F6',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    elevation: 2,
   },
-  filtersSection: {
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  filterGroup: {
+  categoriesContainer: {
+    paddingHorizontal: 12,
     marginBottom: 16,
   },
-  filterTitle: {
-    marginBottom: 8,
-    color: '#374151',
-    fontWeight: '600',
+  categoryChip: {
+    marginHorizontal: 4,
   },
-  filterChips: {
+  selectedCategoryChip: {
+    transform: [{ scale: 1.05 }],
+  },
+  chip: {
+    marginHorizontal: 2,
+  },
+  statsCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  statsContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    justifyContent: 'space-around',
   },
-  filterChip: {
-    marginRight: 8,
-    marginBottom: 8,
+  statItem: {
+    alignItems: 'center',
   },
-  clearButton: {
-    alignSelf: 'center',
-    marginTop: 8,
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3B82F6',
+  },
+  statLabel: {
+    fontSize: 12,
+    opacity: 0.7,
+    marginTop: 4,
   },
   exerciseList: {
-    flex: 1,
-  },
-  exerciseListContent: {
-    padding: 16,
-  },
-  exerciseCardContainer: {
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   exerciseCard: {
-    elevation: 2,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    marginBottom: 16,
   },
   exerciseHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 12,
   },
   exerciseInfo: {
     flex: 1,
-    marginRight: 12,
   },
   exerciseTitle: {
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  exerciseMeta: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  categoryBadge: {
+    alignSelf: 'flex-start',
+  },
+  difficultyBadge: {
+    alignSelf: 'flex-start',
+  },
+  exerciseIcon: {
+    marginLeft: 12,
   },
   exerciseDescription: {
-    color: '#6B7280',
-    lineHeight: 18,
-  },
-  exerciseMetadata: {
-    alignItems: 'flex-end',
-  },
-  categoryChip: {
-    height: 24,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+    color: '#4B5563',
   },
   exerciseDetails: {
-    marginBottom: 12,
-  },
-  detailRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginBottom: 16,
   },
   detailItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  detailLabel: {
-    color: '#6B7280',
-    marginBottom: 4,
-    fontSize: 11,
-  },
-  detailValue: {
-    color: '#374151',
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  difficultyChip: {
-    height: 20,
-  },
-  tagsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 8,
+    gap: 4,
   },
-  tagChip: {
-    height: 20,
-    backgroundColor: '#F9FAFB',
-  },
-  moreTagsText: {
+  detailText: {
+    fontSize: 12,
     color: '#6B7280',
-    fontSize: 10,
-    fontStyle: 'italic',
   },
-  warningSection: {
-    backgroundColor: '#FEF3C7',
-    padding: 8,
-    borderRadius: 6,
-    borderLeftWidth: 3,
-    borderLeftColor: '#F59E0B',
+  anxietyContainer: {
+    marginBottom: 16,
   },
-  warningText: {
-    color: '#92400E',
-    fontSize: 11,
+  anxietyTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+    color: '#374151',
   },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
+  anxietyLevels: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  anxietyItem: {
     alignItems: 'center',
-    paddingVertical: 64,
+  },
+  anxietyLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  anxietyIndicator: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  anxietyValue: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  instructionsSection: {
+    marginBottom: 16,
+  },
+  instructionItem: {
+    paddingVertical: 4,
+  },
+  moreInstructions: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    color: '#6B7280',
+    paddingLeft: 16,
+  },
+  safetyNotesContainer: {
+    backgroundColor: '#FEF3C7',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  safetyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  safetyTitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#92400E',
+    marginLeft: 4,
+  },
+  safetyNote: {
+    fontSize: 12,
+    color: '#92400E',
+    lineHeight: 16,
+  },
+  selectButton: {
+    marginTop: 8,
+  },
+  buttonContent: {
+    paddingVertical: 4,
+  },
+  emptyCard: {
+    margin: 16,
+  },
+  emptyContent: {
+    alignItems: 'center',
+    paddingVertical: 32,
   },
   emptyTitle: {
-    textAlign: 'center',
-    color: '#374151',
-    marginBottom: 8,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+    color: '#4B5563',
   },
   emptySubtitle: {
-    textAlign: 'center',
+    fontSize: 14,
     color: '#6B7280',
-    marginBottom: 24,
-    lineHeight: 20,
+    textAlign: 'center',
+    marginTop: 8,
   },
-  emptyButton: {
-    minWidth: 160,
-  },
-}); 
+});
