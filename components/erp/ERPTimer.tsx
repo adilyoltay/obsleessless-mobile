@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, Vibration, Platform } from 'react-native';
+import { View, StyleSheet, Animated, Vibration, Platform, ScrollView } from 'react-native';
 import { Text, Card, Button, IconButton, ProgressBar } from 'react-native-paper';
 import Slider from '@react-native-community/slider';
 import { Audio } from 'expo-av';
@@ -11,184 +11,104 @@ interface ERPTimerProps {
   onComplete?: (sessionData: any) => void;
 }
 
-export function ERPTimer({ targetDuration = 300, onComplete }: ERPTimerProps) {
-  const [isActive, setIsActive] = useState(false);
+export function ERPTimer({ 
+  exercise, 
+  onComplete 
+}: { 
+  exercise: any;
+  onComplete: (data: any) => void;
+}) {
+  const [seconds, setSeconds] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [time, setTime] = useState(0);
   const [anxietyLevel, setAnxietyLevel] = useState(5);
   const [anxietyHistory, setAnxietyHistory] = useState<Array<{time: number, level: number}>>([]);
-  const [sessionStarted, setSessionStarted] = useState(false);
-
-  const intervalRef = useRef<NodeJS.Timeout>();
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const progressAnim = useRef(new Animated.Value(0)).current;
+  const [targetDuration, setTargetDuration] = useState(300); // 5 minutes default
 
   useEffect(() => {
-    if (isActive && !isPaused) {
-      intervalRef.current = setInterval(() => {
-        setTime(time => time + 1);
+    let interval: NodeJS.Timeout;
+    if (isRunning && !isPaused) {
+      interval = setInterval(() => {
+        setSeconds(s => s + 1);
       }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
     }
+    return () => clearInterval(interval);
+  }, [isRunning, isPaused]);
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isActive, isPaused]);
-
-  useEffect(() => {
-    const progress = Math.min(time / targetDuration, 1);
-    Animated.timing(progressAnim, {
-      toValue: progress,
-      duration: 300,
-      useNativeDriver: Platform.OS !== 'web',
-    }).start();
-
-    if (time > 0 && time >= targetDuration) {
-      completeSession();
-    }
-  }, [time]);
-
-  useEffect(() => {
-    if (isActive) {
-      startPulseAnimation();
-    } else {
-      pulseAnim.setValue(1);
-    }
-  }, [isActive]);
-
-  const startPulseAnimation = () => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.05,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+  const formatTime = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const startSession = () => {
-    setIsActive(true);
-    setSessionStarted(true);
-    setTime(0);
-    setAnxietyHistory([{time: 0, level: anxietyLevel}]);
-          // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); // Geçici olarak devre dışı
-    Toast.show({
-      type: 'info',
-      text1: 'ERP Seansı Başladı',
-      text2: 'Anksiyete seviyenizi düzenli olarak güncelleyin',
-    });
+  const handleStart = () => {
+    setIsRunning(true);
+    setIsPaused(false);
+    recordAnxiety();
   };
 
-  const pauseSession = () => {
+  const handlePause = () => {
     setIsPaused(!isPaused);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const stopSession = () => {
-    setIsActive(false);
+  const handleStop = () => {
+    setIsRunning(false);
     setIsPaused(false);
-    completeSession();
-  };
-
-  const completeSession = () => {
-    setIsActive(false);
-    setIsPaused(false);
+    recordAnxiety();
 
     const sessionData = {
-      duration: time,
+      exerciseId: exercise?.id,
+      duration: seconds,
       targetDuration,
       anxietyHistory,
-      completed: time >= targetDuration,
-      averageAnxiety: anxietyHistory.reduce((sum, entry) => sum + entry.level, 0) / anxietyHistory.length,
-      timestamp: new Date(),
+      peakAnxiety: Math.max(...anxietyHistory.map(h => h.level)),
+      finalAnxiety: anxietyLevel,
+      timestamp: new Date().toISOString()
     };
 
-    // Vibration for completion
-    Vibration.vibrate([200, 100, 200]);
-
-    Toast.show({
-      type: 'success',
-      text1: 'Seans Tamamlandı!',
-      text2: `${formatTime(time)} süre ile başarıyla tamamlandı`,
-    });
-
-    onComplete?.(sessionData);
+    onComplete(sessionData);
   };
 
-  const updateAnxietyLevel = (newLevel: number) => {
-    setAnxietyLevel(newLevel);
-    if (isActive) {
-      setAnxietyHistory(prev => [...prev, {time, level: newLevel}]);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+  const recordAnxiety = () => {
+    setAnxietyHistory(prev => [...prev, { time: seconds, level: anxietyLevel }]);
   };
 
-  const getAnxietyColor = (level: number) => {
-    if (level <= 3) return '#10B981';
-    if (level <= 6) return '#F59E0B';
-    return '#EF4444';
-  };
-
-  const progress = Math.min(time / targetDuration, 1);
+  const progress = Math.min(seconds / targetDuration, 1);
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Card style={styles.card}>
         <Card.Content>
-          <Text variant="headlineSmall" style={styles.title}>
-            ERP Egzersiz Zamanlayıcısı
+          <Text variant="titleLarge" style={styles.title}>
+            {exercise?.title || 'ERP Egzersizi'}
           </Text>
 
           {/* Timer Display */}
-          <Animated.View 
-            style={[
-              styles.timerContainer,
-              { transform: [{ scale: pulseAnim }] }
-            ]}
-          >
+          <View style={styles.timerContainer}>
             <Text variant="displayMedium" style={styles.timerText}>
-              {formatTime(time)}
+              {formatTime(seconds)}
             </Text>
             <Text variant="bodyMedium" style={styles.targetText}>
               Hedef: {formatTime(targetDuration)}
             </Text>
-          </Animated.View>
+          </View>
 
           {/* Progress Bar */}
           <View style={styles.progressContainer}>
-            <ProgressBar 
-              progress={progress} 
-              color="#10B981"
-              style={styles.progressBar}
-            />
-            <Text variant="bodySmall" style={styles.progressText}>
-              %{Math.round(progress * 100)} tamamlandı
+            <View style={styles.progressBar}>
+              <View 
+                style={[styles.progressFill, { width: `${progress * 100}%` }]} 
+              />
+            </View>
+            <Text variant="bodySmall">
+              {Math.round(progress * 100)}% tamamlandı
             </Text>
           </View>
 
-          {/* Anxiety Level Slider */}
-          <View style={styles.anxietySection}>
-            <Text variant="labelLarge" style={styles.anxietyLabel}>
-              Anksiyete Seviyesi: {anxietyLevel}/10
+          {/* Anxiety Level */}
+          <View style={styles.anxietyContainer}>
+            <Text variant="titleMedium" style={styles.anxietyLabel}>
+              Mevcut Kaygı Seviyesi: {anxietyLevel}/10
             </Text>
             <Slider
               style={styles.anxietySlider}
@@ -196,63 +116,64 @@ export function ERPTimer({ targetDuration = 300, onComplete }: ERPTimerProps) {
               maximumValue={10}
               step={1}
               value={anxietyLevel}
-              onValueChange={updateAnxietyLevel}
-              minimumTrackTintColor={getAnxietyColor(anxietyLevel)}
+              onValueChange={setAnxietyLevel}
+              onSlidingComplete={recordAnxiety}
+              minimumTrackTintColor="#EF4444"
               maximumTrackTintColor="#E5E7EB"
-              thumbTintColor={getAnxietyColor(anxietyLevel)}
+              thumbTintColor="#EF4444"
             />
-            <View style={styles.sliderLabels}>
-              <Text variant="bodySmall">Rahat (0)</Text>
-              <Text variant="bodySmall">Panik (10)</Text>
+            <View style={styles.anxietyLabels}>
+              <Text variant="bodySmall">Düşük</Text>
+              <Text variant="bodySmall">Yüksek</Text>
             </View>
           </View>
 
-          {/* Control Buttons */}
-          <View style={styles.controls}>
-            {!sessionStarted ? (
-              <Button
-                mode="contained"
-                onPress={startSession}
-                style={styles.startButton}
-                buttonColor="#10B981"
-                icon="play"
-              >
-                Seansı Başlat
-              </Button>
-            ) : (
-              <View style={styles.activeControls}>
-                <IconButton
-                  icon={isPaused ? "play" : "pause"}
-                  size={30}
-                  onPress={pauseSession}
-                  style={styles.controlButton}
-                  iconColor="#3B82F6"
-                />
-                <IconButton
-                  icon="stop"
-                  size={30}
-                  onPress={stopSession}
-                  style={styles.controlButton}
-                  iconColor="#EF4444"
-                />
-              </View>
-            )}
-          </View>
-
-          {/* Session Info */}
-          {anxietyHistory.length > 1 && (
-            <View style={styles.sessionInfo}>
-              <Text variant="bodySmall" style={styles.infoText}>
-                Anksiyete değişimi: {anxietyHistory.length} kayıt
-              </Text>
-              <Text variant="bodySmall" style={styles.infoText}>
-                Ortalama seviye: {(anxietyHistory.reduce((sum, entry) => sum + entry.level, 0) / anxietyHistory.length).toFixed(1)}
+          {/* Exercise Description */}
+          {exercise?.description && (
+            <View style={styles.descriptionContainer}>
+              <Text variant="titleSmall">Egzersiz Açıklaması:</Text>
+              <Text variant="bodyMedium" style={styles.description}>
+                {exercise.description}
               </Text>
             </View>
           )}
+
+          {/* Control Buttons */}
+          <View style={styles.controlsContainer}>
+            {!isRunning ? (
+              <Button
+                mode="contained"
+                onPress={handleStart}
+                style={styles.startButton}
+                icon="play"
+              >
+                Başla
+              </Button>
+            ) : (
+              <>
+                <Button
+                  mode="outlined"
+                  onPress={handlePause}
+                  style={styles.controlButton}
+                  icon={isPaused ? "play" : "pause"}
+                >
+                  {isPaused ? 'Devam' : 'Duraklat'}
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={handleStop}
+                  style={styles.controlButton}
+                  buttonColor="#EF4444"
+                  icon="stop"
+                >
+                  Bitir
+                </Button>
+              </>
+            )}
+          </View>
         </Card.Content>
       </Card>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -292,16 +213,21 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   progressBar: {
-    height: 8,
-    borderRadius: 4,
+    height: 10,
     backgroundColor: '#E5E7EB',
+    borderRadius: 5,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#10B981',
   },
   progressText: {
     textAlign: 'center',
     marginTop: 8,
     color: '#6B7280',
   },
-  anxietySection: {
+  anxietyContainer: {
     marginBottom: 24,
     padding: 16,
     backgroundColor: '#FEF3C7',
@@ -316,13 +242,22 @@ const styles = StyleSheet.create({
   anxietySlider: {
     height: 40,
   },
-  sliderLabels: {
+  anxietyLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 4,
     marginTop: 8,
   },
-  controls: {
+  descriptionContainer: {
+    marginBottom: 24,
+    padding: 16,
+    backgroundColor: '#E0E7FF',
+    borderRadius: 12,
+  },
+  description: {
+    color: '#374151',
+  },
+  controlsContainer: {
     alignItems: 'center',
     marginBottom: 16,
   },
@@ -330,22 +265,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 24,
   },
-  activeControls: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 20,
-  },
   controlButton: {
-    backgroundColor: '#F3F4F6',
-  },
-  sessionInfo: {
-    padding: 12,
-    backgroundColor: '#EBF8FF',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  infoText: {
-    color: '#1E40AF',
-    marginVertical: 2,
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    marginHorizontal: 8,
   },
 });

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Text, Card, Button, TextInput, HelperText } from 'react-native-paper';
@@ -8,201 +7,184 @@ import { useCreateCompulsion } from '@/hooks/useCompulsions';
 import Toast from 'react-native-toast-message';
 
 const COMPULSION_TYPES = [
-  { value: 'washing', label: 'Yıkama/Temizlik' },
   { value: 'checking', label: 'Kontrol Etme' },
+  { value: 'washing', label: 'Yıkama/Temizlik' },
   { value: 'counting', label: 'Sayma' },
-  { value: 'ordering', label: 'Düzenleme/Sıralama' },
-  { value: 'hoarding', label: 'Biriktirme' },
+  { value: 'ordering', label: 'Düzenleme' },
   { value: 'mental', label: 'Zihinsel Ritüeller' },
   { value: 'reassurance', label: 'Güvence Arama' },
   { value: 'avoidance', label: 'Kaçınma' },
-  { value: 'other', label: 'Diğer' },
+  { value: 'other', label: 'Diğer' }
 ];
 
-export function CompulsionForm() {
-  const [type, setType] = useState('');
-  const [severity, setSeverity] = useState(5);
-  const [resistanceLevel, setResistanceLevel] = useState(5);
-  const [duration, setDuration] = useState('');
-  const [trigger, setTrigger] = useState('');
-  const [notes, setNotes] = useState('');
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+export function CompulsionForm({ onSubmit }: { onSubmit?: (data: any) => void }) {
+  const [formData, setFormData] = useState({
+    type: '',
+    frequency: 1,
+    duration: 5,
+    severity: 5,
+    resistanceLevel: 5,
+    trigger: '',
+    notes: ''
+  });
+  const [loading, setLoading] = useState(false);
 
-  const { mutate: createCompulsion, isPending } = useCreateCompulsion();
+  const handleSave = async () => {
+    if (!formData.type) {
+      Alert.alert('Hata', 'Lütfen kompulsiyon türünü seçiniz');
+      return;
+    }
 
-  const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
-    
-    if (!type) newErrors.type = 'Kompulsiyon tipi seçiniz';
-    if (!duration || isNaN(Number(duration))) newErrors.duration = 'Geçerli süre giriniz (dakika)';
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setLoading(true);
+    try {
+      const compulsionData = {
+        ...formData,
+        timestamp: new Date().toISOString(),
+        id: Date.now().toString()
+      };
 
-  const handleSubmit = () => {
-    if (!validateForm()) return;
+      // Save to AsyncStorage
+      // const existingData = await AsyncStorage.getItem('compulsions');
+      // const compulsions = existingData ? JSON.parse(existingData) : [];
+      // compulsions.push(compulsionData);
+      // await AsyncStorage.setItem('compulsions', JSON.stringify(compulsions));
 
-    const compulsionData = {
-      type,
-      severity,
-      resistanceLevel,
-      duration: Number(duration),
-      trigger: trigger || undefined,
-      notes: notes || undefined,
-    };
+      // Reset form
+      setFormData({
+        type: '',
+        frequency: 1,
+        duration: 5,
+        severity: 5,
+        resistanceLevel: 5,
+        trigger: '',
+        notes: ''
+      });
 
-    createCompulsion(compulsionData, {
-      onSuccess: () => {
-        Toast.show({
-          type: 'success',
-          text1: 'Başarılı',
-          text2: 'Kompulsiyon kaydı oluşturuldu',
-        });
-        // Reset form
-        setType('');
-        setSeverity(5);
-        setResistanceLevel(5);
-        setDuration('');
-        setTrigger('');
-        setNotes('');
-        setErrors({});
-      },
-      onError: (error) => {
-        Toast.show({
-          type: 'error',
-          text1: 'Hata',
-          text2: 'Kayıt oluşturulamadı',
-        });
-      },
-    });
+      Alert.alert('Başarılı', 'Kompulsiyon kaydedildi');
+      onSubmit?.(compulsionData);
+    } catch (error) {
+      Alert.alert('Hata', 'Kaydetme sırasında bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <ScrollView style={styles.container}>
       <Card style={styles.card}>
         <Card.Content>
-          <Text variant="headlineSmall" style={styles.title}>
+          <Text variant="titleMedium" style={styles.title}>
             Kompulsiyon Kaydı
           </Text>
 
-          {/* Kompulsiyon Tipi */}
-          <View style={styles.field}>
-            <Text variant="labelLarge" style={styles.label}>
-              Kompulsiyon Tipi *
-            </Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={type}
-                onValueChange={setType}
-                style={styles.picker}
-              >
-                <PickerItem label="Seçiniz..." value="" />
-                {COMPULSION_TYPES.map((item) => (
-                  <PickerItem 
-                    key={item.value} 
-                    label={item.label} 
-                    value={item.value} 
-                  />
-                ))}
-              </Picker>
-            </View>
-            {errors.type && (
-              <HelperText type="error">{errors.type}</HelperText>
-            )}
-          </View>
+          {/* Type Selection */}
+          <Text variant="bodyMedium" style={styles.label}>
+            Kompulsiyon Türü *
+          </Text>
+          <Picker
+            selectedValue={formData.type}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+            style={styles.picker}
+          >
+            <PickerItem label="Seçiniz..." value="" />
+            {COMPULSION_TYPES.map(type => (
+              <PickerItem 
+                key={type.value} 
+                label={type.label} 
+                value={type.value} 
+              />
+            ))}
+          </Picker>
 
-          {/* Şiddet Seviyesi */}
-          <View style={styles.field}>
-            <Text variant="labelLarge" style={styles.label}>
-              Şiddet Seviyesi: {severity}/10
-            </Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={1}
-              maximumValue={10}
-              step={1}
-              value={severity}
-              onValueChange={setSeverity}
-              minimumTrackTintColor="#10B981"
-              maximumTrackTintColor="#E5E7EB"
-              thumbTintColor="#10B981"
-            />
-            <View style={styles.sliderLabels}>
-              <Text variant="bodySmall">Hafif</Text>
-              <Text variant="bodySmall">Şiddetli</Text>
-            </View>
-          </View>
+          {/* Frequency */}
+          <Text variant="bodyMedium" style={styles.label}>
+            Sıklık (günde kaç kez): {formData.frequency}
+          </Text>
+          <Slider
+            style={styles.slider}
+            minimumValue={1}
+            maximumValue={20}
+            step={1}
+            value={formData.frequency}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, frequency: value }))}
+            minimumTrackTintColor="#10B981"
+            maximumTrackTintColor="#E5E7EB"
+            thumbTintColor="#10B981"
+          />
 
-          {/* Direnç Seviyesi */}
-          <View style={styles.field}>
-            <Text variant="labelLarge" style={styles.label}>
-              Direnç Gösterme: {resistanceLevel}/10
-            </Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={1}
-              maximumValue={10}
-              step={1}
-              value={resistanceLevel}
-              onValueChange={setResistanceLevel}
-              minimumTrackTintColor="#3B82F6"
-              maximumTrackTintColor="#E5E7EB"
-              thumbTintColor="#3B82F6"
-            />
-            <View style={styles.sliderLabels}>
-              <Text variant="bodySmall">Hiç</Text>
-              <Text variant="bodySmall">Çok</Text>
-            </View>
-          </View>
+          {/* Duration */}
+          <Text variant="bodyMedium" style={styles.label}>
+            Süre (dakika): {formData.duration}
+          </Text>
+          <Slider
+            style={styles.slider}
+            minimumValue={1}
+            maximumValue={120}
+            step={1}
+            value={formData.duration}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, duration: value }))}
+            minimumTrackTintColor="#10B981"
+            maximumTrackTintColor="#E5E7EB"
+            thumbTintColor="#10B981"
+          />
 
-          {/* Süre */}
-          <View style={styles.field}>
-            <TextInput
-              label="Süre (dakika) *"
-              value={duration}
-              onChangeText={setDuration}
-              keyboardType="numeric"
-              error={!!errors.duration}
-              style={styles.input}
-            />
-            {errors.duration && (
-              <HelperText type="error">{errors.duration}</HelperText>
-            )}
-          </View>
+          {/* Severity */}
+          <Text variant="bodyMedium" style={styles.label}>
+            Şiddet (1-10): {formData.severity}
+          </Text>
+          <Slider
+            style={styles.slider}
+            minimumValue={1}
+            maximumValue={10}
+            step={1}
+            value={formData.severity}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, severity: value }))}
+            minimumTrackTintColor="#EF4444"
+            maximumTrackTintColor="#E5E7EB"
+            thumbTintColor="#EF4444"
+          />
 
-          {/* Tetikleyici */}
-          <View style={styles.field}>
-            <TextInput
-              label="Tetikleyici"
-              value={trigger}
-              onChangeText={setTrigger}
-              multiline
-              numberOfLines={2}
-              style={styles.input}
-              placeholder="Bu kompulsiyonu tetikleyen durumu açıklayın..."
-            />
-          </View>
+          {/* Resistance Level */}
+          <Text variant="bodyMedium" style={styles.label}>
+            Direnç Seviyesi (1-10): {formData.resistanceLevel}
+          </Text>
+          <Slider
+            style={styles.slider}
+            minimumValue={1}
+            maximumValue={10}
+            step={1}
+            value={formData.resistanceLevel}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, resistanceLevel: value }))}
+            minimumTrackTintColor="#10B981"
+            maximumTrackTintColor="#E5E7EB"
+            thumbTintColor="#10B981"
+          />
 
-          {/* Notlar */}
-          <View style={styles.field}>
-            <TextInput
-              label="Notlar"
-              value={notes}
-              onChangeText={setNotes}
-              multiline
-              numberOfLines={3}
-              style={styles.input}
-              placeholder="Ek notlarınız..."
-            />
-          </View>
+          {/* Trigger */}
+          <TextInput
+            label="Tetikleyici"
+            value={formData.trigger}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, trigger: text }))}
+            style={styles.input}
+            multiline
+            numberOfLines={2}
+          />
+
+          {/* Notes */}
+          <TextInput
+            label="Notlar"
+            value={formData.notes}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, notes: text }))}
+            style={styles.input}
+            multiline
+            numberOfLines={3}
+          />
 
           <Button
             mode="contained"
-            onPress={handleSubmit}
-            loading={isPending}
-            style={styles.submitButton}
-            buttonColor="#10B981"
+            onPress={handleSave}
+            loading={loading}
+            style={styles.button}
           >
             Kaydet
           </Button>
@@ -258,6 +240,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   submitButton: {
+    marginTop: 16,
+    paddingVertical: 8,
+  },
+  button: {
     marginTop: 16,
     paddingVertical: 8,
   },

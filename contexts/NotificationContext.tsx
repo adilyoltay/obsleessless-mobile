@@ -20,12 +20,16 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [isEnabled, setIsEnabled] = useState(false);
   const [fcmToken, setFcmToken] = useState<string | null>(null);
+  const [notificationEnabled, setNotificationEnabled] = useState(false);
+  const [dailyReminders, setDailyReminders] = useState<any[]>([]);
 
   useEffect(() => {
     // Web ortamında notification API'leri çalışmaz
     if (Platform.OS !== 'web') {
       initializeNotifications();
     }
+    setupNotifications();
+    loadNotificationSettings();
   }, []);
 
   const initializeNotifications = async () => {
@@ -117,6 +121,150 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     await messagingService.sendProgressMilestone(milestone);
   };
 
+  const setupNotifications = async () => {
+    if (Platform.OS === 'web') return;
+
+    try {
+      const { status } = await Notifications.requestPermissionsAsync();
+      setNotificationEnabled(status === 'granted');
+
+      if (status === 'granted') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#10B981',
+        });
+
+        await Notifications.setNotificationChannelAsync('reminders', {
+          name: 'Hatırlatıcılar',
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#10B981',
+        });
+      }
+    } catch (error) {
+      console.error('Notification setup error:', error);
+    }
+  };
+
+  const loadNotificationSettings = async () => {
+    try {
+      const settings = await AsyncStorage.getItem('notificationSettings');
+      if (settings) {
+        const parsed = JSON.parse(settings);
+        setDailyReminders(parsed.dailyReminders || []);
+      }
+    } catch (error) {
+      console.error('Load notification settings error:', error);
+    }
+  };
+
+  const scheduleCompulsionReminder = async (time: string, enabled: boolean = true) => {
+    if (!notificationEnabled || Platform.OS === 'web') return;
+
+    try {
+      const [hours, minutes] = time.split(':').map(Number);
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Kompulsiyon Takibi 📝',
+          body: 'Bugünkü kompulsiyonlarınızı kaydetmeyi unutmayın',
+          sound: 'default',
+          data: { type: 'compulsion_reminder' },
+        },
+        trigger: {
+          hour: hours,
+          minute: minutes,
+          repeats: true,
+        },
+      });
+
+      const newReminder = {
+        id: `compulsion_${hours}_${minutes}`,
+        type: 'compulsion',
+        time,
+        enabled,
+        title: 'Kompulsiyon Takibi'
+      };
+
+      const updatedReminders = [...dailyReminders.filter(r => r.id !== newReminder.id), newReminder];
+      setDailyReminders(updatedReminders);
+
+      await AsyncStorage.setItem('notificationSettings', JSON.stringify({
+        dailyReminders: updatedReminders
+      }));
+
+    } catch (error) {
+      console.error('Schedule compulsion reminder error:', error);
+    }
+  };
+
+  const scheduleERPReminderInternal = async (exerciseName: string, time: string) => {
+    if (!notificationEnabled || Platform.OS === 'web') return;
+
+    try {
+      const [hours, minutes] = time.split(':').map(Number);
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'ERP Egzersizi 🧘‍♀️',
+          body: `${exerciseName} egzersizini yapma zamanı`,
+          sound: 'default',
+          data: { type: 'erp_reminder', exerciseName },
+        },
+        trigger: {
+          hour: hours,
+          minute: minutes,
+          repeats: true,
+        },
+      });
+
+    } catch (error) {
+      console.error('Schedule ERP reminder error:', error);
+    }
+  };
+
+  const sendMotivationalNotification = async () => {
+    if (!notificationEnabled || Platform.OS === 'web') return;
+
+    const motivationalMessages = [
+      'Harika gidiyorsun! Kendine güven 💪',
+      'Her küçük adım büyük bir başarı 🌟',
+      'Bugün kendine karşı nazik ol ❤️',
+      'İlerleme kaydediyorsun, devam et! 🚀',
+      'Sen güçlüsün, bu da geçecek 🌈'
+    ];
+
+    const randomMessage = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Günün Motivasyonu',
+          body: randomMessage,
+          sound: 'default',
+          data: { type: 'motivation' },
+        },
+        trigger: {
+          seconds: 2,
+        },
+      });
+    } catch (error) {
+      console.error('Send motivational notification error:', error);
+    }
+  };
+
+  const cancelAllReminders = async () => {
+    try {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      setDailyReminders([]);
+      await AsyncStorage.removeItem('notificationSettings');
+    } catch (error) {
+      console.error('Cancel all reminders error:', error);
+    }
+  };
+
   const value: NotificationContextType = {
     isEnabled,
     fcmToken,
@@ -127,8 +275,18 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     sendProgressMilestone,
   };
 
+  const internalValue = {
+    notificationEnabled,
+    dailyReminders,
+    scheduleCompulsionReminder,
+    scheduleERPReminder: scheduleERPReminderInternal,
+    sendMotivationalNotification,
+    cancelAllReminders,
+    setupNotifications
+  };
+
   return (
-    <NotificationContext.Provider value={value}>
+    <NotificationContext.Provider value={internalValue}>
       {children}
     </NotificationContext.Provider>
   );

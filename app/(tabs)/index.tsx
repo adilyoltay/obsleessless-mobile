@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, RefreshControl } from 'react-native';
 import { Text, Card, Button, IconButton, Chip, Avatar } from 'react-native-paper';
@@ -117,7 +116,7 @@ export default function HomeScreen() {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return 'Bugün';
     if (diffDays === 1) return 'Dün';
     return `${diffDays} gün önce`;
@@ -223,7 +222,7 @@ export default function HomeScreen() {
           <Text variant="titleMedium" style={styles.sectionTitle}>
             Bugünkü İstatistikler
           </Text>
-          
+
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
               <Text variant="headlineSmall" style={[styles.statNumber, { color: '#EF4444' }]}>
@@ -233,7 +232,7 @@ export default function HomeScreen() {
                 Kompulsiyon
               </Text>
             </View>
-            
+
             <View style={styles.statItem}>
               <Text variant="headlineSmall" style={[styles.statNumber, { color: getResistanceColor(dashboardStats.averageResistance) }]}>
                 {dashboardStats.averageResistance.toFixed(1)}
@@ -242,7 +241,7 @@ export default function HomeScreen() {
                 Ortalama Direnç
               </Text>
             </View>
-            
+
             <View style={styles.statItem}>
               <Text variant="headlineSmall" style={[styles.statNumber, { color: '#3B82F6' }]}>
                 {dashboardStats.totalSessions}
@@ -261,7 +260,7 @@ export default function HomeScreen() {
           <Text variant="titleMedium" style={styles.sectionTitle}>
             Hızlı İşlemler
           </Text>
-          
+
           <View style={styles.actionButtons}>
             <Button
               mode="contained"
@@ -271,7 +270,7 @@ export default function HomeScreen() {
             >
               Kompulsiyon Kaydet
             </Button>
-            
+
             <Button
               mode="contained"
               onPress={() => router.push('/erp')}
@@ -281,7 +280,7 @@ export default function HomeScreen() {
               ERP Egzersizi
             </Button>
           </View>
-          
+
           <View style={styles.actionButtons}>
             <Button
               mode="outlined"
@@ -291,7 +290,7 @@ export default function HomeScreen() {
             >
               Değerlendirme
             </Button>
-            
+
             <Button
               mode="outlined"
               onPress={() => router.push('/explore')}
@@ -310,14 +309,14 @@ export default function HomeScreen() {
           <Text variant="titleMedium" style={styles.sectionTitle}>
             Haftalık Özet
           </Text>
-          
+
           <View style={styles.summaryRow}>
             <Text variant="bodyMedium">Toplam Kompulsiyon:</Text>
             <Chip icon="alert-circle" mode="outlined">
               {dashboardStats.weeklyCompulsions}
             </Chip>
           </View>
-          
+
           <View style={styles.summaryRow}>
             <Text variant="bodyMedium">Son ERP Seansı:</Text>
             <Chip icon="timer" mode="outlined">
