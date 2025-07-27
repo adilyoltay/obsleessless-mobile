@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert, Dimensions } from 'react-native';
 import { Text, Card, Button, Checkbox, RadioButton, TextInput, Divider } from 'react-native-paper';
-import { Picker } from '@/components/ui/Picker';
+import { Picker, PickerItem } from '@/components/ui/Picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
@@ -301,9 +301,9 @@ export function OCDProfileForm() {
                 onValueChange={setCurrentTreatment}
                 style={styles.picker}
               >
-                <Picker.Item label="Seçiniz..." value="" />
+                <PickerItem label="Seçiniz..." value="" />
                 {TREATMENT_OPTIONS.map((treatment) => (
-                  <Picker.Item 
+                  <PickerItem 
                     key={treatment.id} 
                     label={treatment.label} 
                     value={treatment.id} 
@@ -379,9 +379,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   card: {
-    elevation: 2,
     borderRadius: 12,
     marginBottom: 20,
+    backgroundColor: '#FFFFFF',
+    // Use React Native Paper's built-in elevation instead of shadow props
   },
   title: {
     textAlign: 'center',

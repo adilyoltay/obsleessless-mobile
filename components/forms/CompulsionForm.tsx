@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Text, Card, Button, TextInput, HelperText } from 'react-native-paper';
-import { Picker } from '@/components/ui/Picker';
+import { Picker, PickerItem } from '@/components/ui/Picker';
 import Slider from '@react-native-community/slider';
 import { useCreateCompulsion } from '@/hooks/useCompulsions';
 import Toast from 'react-native-toast-message';
@@ -97,9 +97,9 @@ export function CompulsionForm() {
                 onValueChange={setType}
                 style={styles.picker}
               >
-                <Picker.Item label="Seçiniz..." value="" />
+                <PickerItem label="Seçiniz..." value="" />
                 {COMPULSION_TYPES.map((item) => (
-                  <Picker.Item 
+                  <PickerItem 
                     key={item.value} 
                     label={item.label} 
                     value={item.value} 

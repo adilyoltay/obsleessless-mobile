@@ -80,7 +80,11 @@ export function Picker({ children, selectedValue, onValueChange, style, ...props
   );
 }
 
-Picker.Item = ({ label, value }: { label: string; value: string }) => null;
+// Picker.Item component for API compatibility
+export const PickerItem = ({ label, value }: { label: string; value: string }) => null;
+
+// Attach to Picker for backward compatibility
+Picker.Item = PickerItem;
 
 const styles = StyleSheet.create({
   container: {
