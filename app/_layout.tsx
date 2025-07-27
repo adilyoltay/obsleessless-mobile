@@ -21,8 +21,8 @@ import { NavigationGuard } from '@/components/navigation/NavigationGuard';
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-// Global error handlers
-if (typeof window !== 'undefined') {
+// Global error handlers - Web only
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
   // Suppress known warnings in development
   const originalWarn = console.warn;
   const originalError = console.error;
@@ -98,11 +98,10 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <LanguageProvider>
           <AuthProvider>
-            <NavigationGuard>
-              <RootLayoutNav />
-            </NavigationGuard>
             <NotificationProvider>
-              
+              <NavigationGuard>
+                <RootLayoutNav />
+              </NavigationGuard>
             </NotificationProvider>
           </AuthProvider>
         </LanguageProvider>
