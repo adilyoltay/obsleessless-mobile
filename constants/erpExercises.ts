@@ -81,256 +81,316 @@ export const ERP_CATEGORIES: ERPCategoryInfo[] = [
   },
 ];
 
-// Pre-defined ERP Exercises
+export interface ERPExercise {
+  id: string;
+  name: string;
+  category: 'in_vivo' | 'imaginal' | 'interoceptive' | 'response_prevention';
+  targetCompulsion: string[];
+  difficulty: 1 | 2 | 3 | 4 | 5;
+  duration: number; // minutes
+  description: string;
+  instructions: string[];
+  safetyNotes?: string[];
+  expectedAnxiety: {
+    initial: number;
+    peak: number;
+    final: number;
+  };
+}
+
 export const ERP_EXERCISES: ERPExercise[] = [
-  // BEGINNER LEVEL EXERCISES
+  // Washing/Cleaning Exercises
   {
-    id: 'washing-hands-delay',
-    title: 'El Yıkama Gecikmesi',
-    titleEn: 'Hand Washing Delay',
-    description: 'El yıkama isteğini hissettiğinizde 5 dakika bekleme pratiği',
-    descriptionEn: 'Practice waiting 5 minutes when you feel the urge to wash hands',
-    category: 'response_prevention',
-    difficulty: 'beginner',
-    duration: 10,
-    targetAnxiety: 4,
-    instructions: [
-      '1. El yıkama isteği hissettiğinizde durdurun',
-      '2. Derin nefes alın ve kaygı seviyenizi 1-10 arası değerlendirin',
-      '3. 5 dakika boyunca el yıkamadan bekleyin',
-      '4. Bu süre boyunca kaygınızı gözlemleyin',
-      '5. 5 dakika sonra hala istiyorsanız ellerinizi yıkayabilirsiniz'
-    ],
-    instructionsEn: [
-      '1. Stop when you feel the urge to wash hands',
-      '2. Take a deep breath and rate your anxiety 1-10',
-      '3. Wait 5 minutes without washing',
-      '4. Observe your anxiety during this time',
-      '5. After 5 minutes, you may wash if you still want to'
-    ],
-    preparations: [
-      'Rahat bir ortam seçin',
-      'Saatinizi yanınıza alın',
-      'Su kaynağından uzaklaşın'
-    ],
-    preparationsEn: [
-      'Choose a comfortable environment',
-      'Keep a timer with you',
-      'Move away from water sources'
-    ],
-    tips: [
-      'Kaygının zamanla azaldığını fark edeceksiniz',
-      'Mükemmel olmak zorunda değilsiniz',
-      'Her deneme bir başarıdır'
-    ],
-    tipsEn: [
-      'You will notice anxiety decreasing over time',
-      'You don\'t have to be perfect',
-      'Every attempt is a success'
-    ],
-    relatedCompulsions: ['washing'],
-    tags: ['beginner', 'washing', 'delay', 'response_prevention'],
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: 'touching-doorknob',
-    title: 'Kapı Kolu Dokunma',
-    titleEn: 'Doorknob Touching',
-    description: 'Kapı koluna dokunup ardından el yıkamama pratiği',
-    descriptionEn: 'Practice touching doorknobs without washing hands afterward',
-    category: 'exposure',
-    difficulty: 'beginner',
+    id: 'touch_doorknob',
+    name: 'Kapı Kolu Dokunma',
+    category: 'in_vivo',
+    targetCompulsion: ['washing'],
+    difficulty: 2,
     duration: 15,
-    targetAnxiety: 5,
+    description: 'Kapı koluna dokunup ellerinizi yıkamadan bekleme',
     instructions: [
-      '1. Temiz bir kapı kolu seçin',
-      '2. Başlangıç kaygı seviyenizi kaydedin',
-      '3. Kapı koluna normal şekilde dokunun',
-      '4. 15 dakika boyunca el yıkamadan bekleyin',
-      '5. Kaygınızın değişimini gözlemleyin'
+      'Kapı koluna dokunun',
+      'Ellerinizi yıkama isteğine karşı direnin',
+      '15 dakika boyunca bekleyin',
+      'Anksiyete seviyenizi takip edin'
     ],
-    instructionsEn: [
-      '1. Choose a clean doorknob',
-      '2. Record your initial anxiety level',
-      '3. Touch the doorknob normally',
-      '4. Wait 15 minutes without washing hands',
-      '5. Observe how your anxiety changes'
+    safetyNotes: [
+      'Gerçek sağlık riski oluşturmayan yüzeyler seçin',
+      'Yemek yemeden önce değil'
     ],
-    preparations: [
-      'Uygun bir kapı kolu belirleyin',
-      'Çevrede kimse yokken yapın',
-      'Rahatlatıcı aktivite planlayın'
-    ],
-    preparationsEn: [
-      'Identify an appropriate doorknob',
-      'Do it when no one is around',
-      'Plan a relaxing activity'
-    ],
-    relatedCompulsions: ['washing', 'avoidance'],
-    tags: ['beginner', 'exposure', 'contamination', 'doorknob'],
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    expectedAnxiety: {
+      initial: 6,
+      peak: 8,
+      final: 4
+    }
   },
-
-  // INTERMEDIATE LEVEL EXERCISES
   {
-    id: 'checking-reduction',
-    title: 'Kontrol Azaltma',
-    titleEn: 'Checking Reduction',
-    description: 'Kapı/ocak kontrolünü tek sefer yapmaya sınırlama',
-    descriptionEn: 'Limiting door/stove checking to once only',
-    category: 'response_prevention',
-    difficulty: 'intermediate',
+    id: 'dirty_hands_timer',
+    name: 'Kirli Eller Zamanlayıcı',
+    category: 'in_vivo',
+    targetCompulsion: ['washing'],
+    difficulty: 3,
     duration: 30,
-    targetAnxiety: 6,
+    description: 'Ellerinizi bilinçli olarak kirletip beklemek',
     instructions: [
-      '1. Kontrol etmek istediğiniz şeyi belirleyin (kapı, ocak, vs.)',
-      '2. Tek bir kontrol yapacağınıza karar verin',
-      '3. Dikkatli bir şekilde bir kez kontrol edin',
-      '4. Tekrar kontrol etme isteğine direnenin',
-      '5. 30 dakika boyunca kontrol etmeden kalın'
+      'Ellerinizi toprakla veya toz ile kirletin',
+      'Yıkama isteğine direnin',
+      '30 dakika boyunca bekleyin',
+      'Normal aktivitelerinize devam edin'
     ],
-    instructionsEn: [
-      '1. Identify what you want to check (door, stove, etc.)',
-      '2. Decide to check only once',
-      '3. Check carefully one time',
-      '4. Resist the urge to check again',
-      '5. Stay without checking for 30 minutes'
-    ],
-    preparations: [
-      'Kontrol edeceğiniz şeyi önceden planlayın',
-      'Dikkat dağıtıcı aktiviteler hazırlayın',
-      'Destek kişisini bilgilendirin'
-    ],
-    preparationsEn: [
-      'Plan in advance what you will check',
-      'Prepare distracting activities',
-      'Inform your support person'
-    ],
-    tips: [
-      'İlk kontrol sonrası güvendiğinizi hatırlayın',
-      'Şüphe normal bir duygu',
-      'Zamanla güven artacak'
-    ],
-    tipsEn: [
-      'Remember you trusted the first check',
-      'Doubt is a normal feeling',
-      'Confidence will increase over time'
-    ],
-    relatedCompulsions: ['checking'],
-    tags: ['intermediate', 'checking', 'response_prevention', 'control'],
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    expectedAnxiety: {
+      initial: 7,
+      peak: 9,
+      final: 3
+    }
   },
 
-  // ADVANCED LEVEL EXERCISES
+  // Checking Exercises
   {
-    id: 'contamination-exposure',
-    title: 'Kirlenme Maruz Kalma',
-    titleEn: 'Contamination Exposure',
-    description: 'Kasıtlı olarak "kirli" yüzeylere dokunma ve el yıkamama',
-    descriptionEn: 'Deliberately touching "dirty" surfaces without washing hands',
-    category: 'exposure',
-    difficulty: 'advanced',
-    duration: 60,
-    targetAnxiety: 8,
+    id: 'lock_once_only',
+    name: 'Kapıyı Tek Kez Kilitleme',
+    category: 'response_prevention',
+    targetCompulsion: ['checking'],
+    difficulty: 2,
+    duration: 20,
+    description: 'Kapıyı sadece bir kez kilitleyip kontrol etmeme',
     instructions: [
-      '1. Orta derecede kirli bir yüzey seçin (masa, sandalye)',
-      '2. Başlangıç kaygısını kaydedin',
-      '3. Yüzeye bilinçli olarak dokunun',
-      '4. 1 saat boyunca el yıkamayın',
-      '5. Bu sürede normal aktivitelerinizi yapın'
+      'Kapıyı normal şekilde kilitleyin',
+      'Sadece BİR KEZ kontrol edin',
+      'Evden/odadan çıkın',
+      'Geri dönüp kontrol etme isteğine direnin'
     ],
-    instructionsEn: [
-      '1. Choose a moderately dirty surface (table, chair)',
-      '2. Record initial anxiety',
-      '3. Deliberately touch the surface',
-      '4. Don\'t wash hands for 1 hour',
-      '5. Continue normal activities during this time'
+    expectedAnxiety: {
+      initial: 6,
+      peak: 8,
+      final: 4
+    }
+  },
+  {
+    id: 'stove_single_check',
+    name: 'Ocağı Tek Kontrol',
+    category: 'response_prevention',
+    targetCompulsion: ['checking'],
+    difficulty: 3,
+    duration: 25,
+    description: 'Ocağı sadece bir kez kontrol edip çıkmak',
+    instructions: [
+      'Ocak düğmelerini kapatın',
+      'Sadece BİR KEZ kontrol edin',
+      'Mutfaktan çıkın',
+      'Tekrar kontrol etme isteğine direnin'
     ],
-    preparations: [
-      'Güvenli ama "kirli" yüzey seçin',
-      'Yakınında kimse olmasın',
-      'Acil durum planı hazırlayın'
+    safetyNotes: [
+      'Gerçekten kapandığından emin olun',
+      'Görsel kontrol yeterli'
     ],
-    preparationsEn: [
-      'Choose safe but "dirty" surface',
-      'Ensure no one is nearby',
-      'Prepare emergency plan'
-    ],
-    warnings: [
-      'Gerçekten kirli/tehlikeli yüzeylerden kaçının',
-      'Aşırı kaygı hissederseniz durdurun',
-      'Terapi sırasında yapmayı düşünün'
-    ],
-    warningsEn: [
-      'Avoid truly dirty/dangerous surfaces',
-      'Stop if you feel extreme anxiety',
-      'Consider doing during therapy sessions'
-    ],
-    relatedCompulsions: ['washing', 'avoidance'],
-    tags: ['advanced', 'contamination', 'exposure', 'challenging'],
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    expectedAnxiety: {
+      initial: 7,
+      peak: 9,
+      final: 4
+    }
   },
 
-  // EXPERT LEVEL EXERCISES
+  // Counting Exercises
   {
-    id: 'uncertainty-tolerance',
-    title: 'Belirsizliğe Tahammül',
-    titleEn: 'Uncertainty Tolerance',
-    description: 'Kesin olmama durumlarında kontrol etmeme pratiği',
-    descriptionEn: 'Practice not checking in uncertain situations',
-    category: 'cognitive',
-    difficulty: 'expert',
-    duration: 120,
-    targetAnxiety: 9,
+    id: 'interrupted_counting',
+    name: 'Kesintili Sayma',
+    category: 'response_prevention',
+    targetCompulsion: ['counting'],
+    difficulty: 2,
+    duration: 15,
+    description: 'Saymayı yarıda kesip devam etmeme',
     instructions: [
-      '1. Belirsiz bir durum yaratın (ışık açık mı kapalı mı?)',
-      '2. Kontrol etmeme kararı alın',
-      '3. Belirsizlik hissini kabul edin',
-      '4. 2 saat boyunca kontrol etmeyin',
-      '5. Belirsizlikle yaşamayı öğrenin'
+      'Herhangi bir şeyi saymaya başlayın',
+      'Ortada kesin (örn: 7\'de)',
+      'Baştan saymama isteğine direnin',
+      'Diğer aktivitelere geçin'
     ],
-    instructionsEn: [
-      '1. Create an uncertain situation (is light on or off?)',
-      '2. Decide not to check',
-      '3. Accept the feeling of uncertainty',
-      '4. Don\'t check for 2 hours',
-      '5. Learn to live with uncertainty'
-    ],
-    preparations: [
-      'Çok güçlü destek sistemi olsun',
-      'Terapi sırasında yapın',
-      'Acil çıkış planı hazırlayın'
-    ],
-    preparationsEn: [
-      'Have very strong support system',
-      'Do during therapy',
-      'Prepare emergency exit plan'
-    ],
-    warnings: [
-      'Sadece deneyimli kişiler yapmalı',
-      'Terapi süpervizyonu öneriliş',
-      'Panik hissetseniz durdurun'
-    ],
-    warningsEn: [
-      'Only experienced individuals should do this',
-      'Therapy supervision recommended',
-      'Stop if you feel panic'
-    ],
-    relatedCompulsions: ['checking', 'mental', 'reassurance'],
-    tags: ['expert', 'uncertainty', 'cognitive', 'advanced'],
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    expectedAnxiety: {
+      initial: 5,
+      peak: 7,
+      final: 3
+    }
   },
+
+  // Arranging/Symmetry Exercises
+  {
+    id: 'asymmetric_objects',
+    name: 'Asimetrik Nesneler',
+    category: 'in_vivo',
+    targetCompulsion: ['arranging'],
+    difficulty: 2,
+    duration: 20,
+    description: 'Nesneleri bilinçli olarak asimetrik bırakma',
+    instructions: [
+      'Masanızdaki nesneleri düzensiz yerleştirin',
+      'Kitapları çapraz koyun',
+      'Düzeltme isteğine direnin',
+      '20 dakika bekleyin'
+    ],
+    expectedAnxiety: {
+      initial: 6,
+      peak: 8,
+      final: 4
+    }
+  },
+
+  // Mental Ritual Exercises
+  {
+    id: 'incomplete_prayers',
+    name: 'Yarım Kalan Dua',
+    category: 'response_prevention',
+    targetCompulsion: ['mental', 'religious'],
+    difficulty: 4,
+    duration: 30,
+    description: 'Mental ritüeli tamamlamadan bırakma',
+    instructions: [
+      'Mental ritüelinizi başlatın',
+      'Yarıda kesin',
+      'Baştan alma isteğine direnin',
+      'Diğer düşüncelere odaklanın'
+    ],
+    safetyNotes: [
+      'Dini değerlerinizle çelişirse atla',
+      'Danışmanınızla konuşun'
+    ],
+    expectedAnxiety: {
+      initial: 8,
+      peak: 9,
+      final: 5
+    }
+  },
+
+  // Interoceptive Exercises
+  {
+    id: 'heart_rate_increase',
+    name: 'Kalp Atışı Hızlandırma',
+    category: 'interoceptive',
+    targetCompulsion: ['checking'],
+    difficulty: 3,
+    duration: 10,
+    description: 'Fiziksel egzersizle kalp atışını hızlandırma',
+    instructions: [
+      '2 dakika tempolu yürüyüş yapın',
+      'Kalp atışınızın hızlandığını hissedin',
+      'Kontrol etme isteğine direnin',
+      'Doğal olarak yavaşlamasını bekleyin'
+    ],
+    safetyNotes: [
+      'Kalp sorunu varsa doktorunuza danışın',
+      'Aşırıya kaçmayın'
+    ],
+    expectedAnxiety: {
+      initial: 5,
+      peak: 7,
+      final: 3
+    }
+  },
+
+  // Imaginal Exercises
+  {
+    id: 'contamination_imagination',
+    name: 'Kirlenme Hayali',
+    category: 'imaginal',
+    targetCompulsion: ['washing'],
+    difficulty: 3,
+    duration: 15,
+    description: 'Kirlenme senaryolarını hayal etme',
+    instructions: [
+      'Gözlerinizi kapatın',
+      'Kirli bir yüzeye dokunduğunuzu hayal edin',
+      'Kirlenme hissini yaşayın',
+      'Yıkama düşüncelerine direnin'
+    ],
+    expectedAnxiety: {
+      initial: 6,
+      peak: 8,
+      final: 4
+    }
+  },
+
+  // Advanced Exercises
+  {
+    id: 'public_mistakes',
+    name: 'Kasıtlı Hatalar',
+    category: 'in_vivo',
+    targetCompulsion: ['checking', 'arranging'],
+    difficulty: 4,
+    duration: 45,
+    description: 'Küçük hatalar yapıp düzeltmeme',
+    instructions: [
+      'E-posta yazarken küçük bir yazım hatası bırakın',
+      'Masanızda bir şey düzensiz kalsın',
+      'Düzeltme isteğine direnin',
+      'Normal işlerinize devam edin'
+    ],
+    safetyNotes: [
+      'Ciddi sonuçları olmayan hatalar seçin',
+      'İş performansınızı etkilemesin'
+    ],
+    expectedAnxiety: {
+      initial: 7,
+      peak: 9,
+      final: 4
+    }
+  },
+
+  {
+    id: 'uncertainty_tolerance',
+    name: 'Belirsizlik Toleransı',
+    category: 'imaginal',
+    targetCompulsion: ['checking', 'mental'],
+    difficulty: 5,
+    duration: 30,
+    description: 'Belirsizlik yaşayan senaryoları kabul etme',
+    instructions: [
+      'Bir konuda kesin olmadığınız bir durumu düşünün',
+      'Kontrol etme veya araştırma isteğine direnin',
+      '"Belki" cümleleriyle düşünün',
+      'Belirsizliği kabul etmeye çalışın'
+    ],
+    expectedAnxiety: {
+      initial: 8,
+      peak: 9,
+      final: 5
+    }
+  }
 ];
+
+export const EXPOSURE_CATEGORIES = {
+  in_vivo: {
+    name: 'Gerçek Yaşam Maruziyeti',
+    description: 'Gerçek durumlarla yüzleşme',
+    icon: '🌍',
+    color: '#4ECDC4'
+  },
+  imaginal: {
+    name: 'Hayal Gücü Maruziyeti',
+    description: 'Zihinsel senaryolar oluşturma',
+    icon: '🧠',
+    color: '#45B7D1'
+  },
+  interoceptive: {
+    name: 'İç Duyum Maruziyeti',
+    description: 'Bedensel hisleri yaşama',
+    icon: '❤️',
+    color: '#FF6B35'
+  },
+  response_prevention: {
+    name: 'Yanıt Engelleme',
+    description: 'Kompulsiyonları engelleme',
+    icon: '🛡️',
+    color: '#96CEB4'
+  }
+} as const;
+
+export const DIFFICULTY_LEVELS = {
+  1: { label: 'Çok Kolay', color: '#27AE60', description: 'Az anksiyete' },
+  2: { label: 'Kolay', color: '#F39C12', description: 'Hafif anksiyete' },
+  3: { label: 'Orta', color: '#E67E22', description: 'Orta anksiyete' },
+  4: { label: 'Zor', color: '#E74C3C', description: 'Yüksek anksiyete' },
+  5: { label: 'Çok Zor', color: '#8E44AD', description: 'Çok yüksek anksiyete' }
+} as const;
 
 // Exercise Templates by Compulsion Type
 export const ERP_EXERCISE_TEMPLATES = {
@@ -365,12 +425,20 @@ export const getERPExercisesByCategory = (category: ERPCategory): ERPExercise[] 
 };
 
 export const getERPExercisesByDifficulty = (difficulty: ERPDifficulty): ERPExercise[] => {
-  return ERP_EXERCISES.filter(exercise => exercise.difficulty === difficulty);
+  return ERP_EXERCISES.filter(exercise => {
+    const difficultyMap = {
+      beginner: 1,
+      intermediate: 2,
+      advanced: 3,
+      expert: 4,
+    };
+    return difficultyMap[difficulty] !== undefined ? ERP_EXERCISES.filter(exercise => exercise.difficulty === difficultyMap[difficulty])[0] : false;
+  });
 };
 
 export const getERPExercisesByCompulsion = (compulsionType: string): ERPExercise[] => {
-  return ERP_EXERCISES.filter(exercise => 
-    exercise.relatedCompulsions.includes(compulsionType)
+  return ERP_EXERCISES.filter(exercise =>
+    exercise.targetCompulsion.includes(compulsionType)
   );
 };
 
@@ -392,4 +460,4 @@ export const getDifficultyLabel = (difficulty: ERPDifficulty, isEnglish: boolean
     expert: isEnglish ? 'Expert' : 'Uzman',
   };
   return labels[difficulty];
-}; 
+};

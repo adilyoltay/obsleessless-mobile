@@ -1,221 +1,368 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { Card, Title, Paragraph, Button, FAB, Avatar, Chip } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import ScreenLayout from '@/components/layout/ScreenLayout';
-import { useCompulsions, useCompulsionStats } from '@/hooks/useCompulsions';
-import CompulsionStats from '@/components/compulsions/CompulsionStats';
-import { useTranslation } from '@/hooks/useTranslation';
+import { Card, Text, Button, Chip, FAB } from 'react-native-paper';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from '../../hooks/useTranslation';
+import { StreakCounter } from '../../components/gamification/StreakCounter';
+import { CompulsionStats } from '../../components/compulsions/CompulsionStats';
 import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+
+interface DashboardData {
+  streak: {
+    currentStreak: number;
+    longestStreak: number;
+    level: any;
+    progress: number;
+    nextLevelIn: number;
+    todayCompleted: boolean;
+    activities: {
+      compulsionTracking: boolean;
+      erpExercise: boolean;
+      dailyGoal: boolean;
+    };
+  };
+  todayStats: {
+    compulsionCount: number;
+    erpMinutes: number;
+    resistanceAverage: number;
+    anxietyReduction: number;
+  };
+  weeklyProgress: {
+    improvement: number;
+    trend: 'up' | 'down' | 'stable';
+  };
+  personalizedTips: Array<{
+    id: string;
+    title: string;
+    description: string;
+    type: 'erp' | 'mindfulness' | 'behavioral';
+    action: string;
+  }>;
+  quickActions: Array<{
+    id: string;
+    title: string;
+    icon: string;
+    route: string;
+    color: string;
+  }>;
+}
 
 export default function DashboardScreen() {
+  const { user } = useAuth();
   const { t } = useTranslation();
-  const { data: compulsions, isLoading } = useCompulsions();
-  const { data: stats } = useCompulsionStats();
   const [refreshing, setRefreshing] = useState(false);
-
-  const todayEntries = compulsions?.filter(c => {
-    const today = new Date().toDateString();
-    return new Date(c.timestamp).toDateString() === today;
-  }) || [];
-
-  const loadData = async () => {
-    // Data is loaded via react-query hooks automatically
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
+  const [dashboardData, setDashboardData] = useState<DashboardData>({
+    streak: {
+      currentStreak: 7,
+      longestStreak: 14,
+      level: {
+        id: 'beginner',
+        name: 'Başlangıç',
+        emoji: '🌱',
+        minDays: 1,
+        maxDays: 7,
+        color: ['#a8e6cf', '#88d8a3'],
+        benefits: ['İlk adımları attınız', 'Farkındalık kazanıyorsunuz']
+      },
+      progress: 0.7,
+      nextLevelIn: 1,
+      todayCompleted: false,
+      activities: {
+        compulsionTracking: true,
+        erpExercise: false,
+        dailyGoal: false,
+      }
+    },
+    todayStats: {
+      compulsionCount: 3,
+      erpMinutes: 15,
+      resistanceAverage: 6.5,
+      anxietyReduction: 40,
+    },
+    weeklyProgress: {
+      improvement: 23,
+      trend: 'up'
+    },
+    personalizedTips: [
+      {
+        id: '1',
+        title: 'ERP Egzersizi Önerisi',
+        description: 'Kapı kilidini tek seferde kontrol etme egzersizi deneyin',
+        type: 'erp',
+        action: 'ERP Başlat'
+      },
+      {
+        id: '2',
+        title: 'Nefes Tekniği',
+        description: '4-7-8 nefes tekniği anksiyete yönetimi için',
+        type: 'mindfulness',
+        action: 'Dene'
+      },
+      {
+        id: '3',
+        title: 'Davranışsal İpucu',
+        description: 'Kompulsiyonlara direnç gösterme sürenizi artırın',
+        type: 'behavioral',
+        action: 'Öğren'
+      }
+    ],
+    quickActions: [
+      {
+        id: 'track_compulsion',
+        title: 'Kompulsiyon Kaydet',
+        icon: '📊',
+        route: '/tracking',
+        color: '#FF6B35'
+      },
+      {
+        id: 'start_erp',
+        title: 'ERP Egzersizi',
+        icon: '🛡️',
+        route: '/erp',
+        color: '#4ECDC4'
+      },
+      {
+        id: 'ybocs_assessment',
+        title: 'Y-BOCS Değerlendirme',
+        icon: '📋',
+        route: '/assessment',
+        color: '#45B7D1'
+      },
+      {
+        id: 'view_progress',
+        title: 'İlerleme Görüntüle',
+        icon: '📈',
+        route: '/tracking',
+        color: '#96CEB4'
+      },
+    ]
+  });
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
+    // TODO: Fetch fresh data
+    setTimeout(() => setRefreshing(false), 1000);
   };
 
-  const getMotivationalMessage = () => {
-    const messages = [
-      "Her küçük adım bir zaferdir! 💪",
-      "Bugün kendine karşı nazik ol 🌟",
-      "İlerleme mükemmellikten daha önemli ✨",
-      "Sen güçlüsün, bunu başarabilirsin! 🌈"
-    ];
-    return messages[Math.floor(Math.random() * messages.length)];
+  const handleActivityPress = (activity: string) => {
+    switch (activity) {
+      case 'compulsionTracking':
+        router.push('/tracking');
+        break;
+      case 'erpExercise':
+        router.push('/erp');
+        break;
+      case 'dailyGoal':
+        router.push('/settings');
+        break;
+    }
+  };
+
+  const handleQuickAction = (route: string) => {
+    router.push(route as any);
+  };
+
+  const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
+    switch (trend) {
+      case 'up': return '📈';
+      case 'down': return '📉';
+      case 'stable': return '➡️';
+    }
+  };
+
+  const getTipIcon = (type: string) => {
+    switch (type) {
+      case 'erp': return '🛡️';
+      case 'mindfulness': return '🧘';
+      case 'behavioral': return '🎯';
+      default: return '💡';
+    }
   };
 
   return (
-    <ScreenLayout scrollable backgroundColor="#FAFAFA">
+    <View style={styles.container}>
       <ScrollView 
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Motivational Header */}
-        <Card style={styles.welcomeCard} mode="elevated">
-          <Card.Content style={styles.welcomeContent}>
-            <View style={styles.welcomeHeader}>
-              <Avatar.Icon size={48} icon="heart" style={styles.avatar} />
-              <View style={styles.welcomeText}>
-                <Title style={styles.welcomeTitle}>Merhaba! 👋</Title>
-                <Paragraph style={styles.motivationalText}>
-                  {getMotivationalMessage()}
-                </Paragraph>
-              </View>
-            </View>
-          </Card.Content>
-        </Card>
+        {/* Welcome Header */}
+        <LinearGradient
+          colors={['#667eea', '#764ba2']}
+          style={styles.welcomeHeader}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Text style={styles.welcomeText}>Hoş geldin!</Text>
+          <Text style={styles.userName}>{user?.displayName || 'OKB Savaşçısı'}</Text>
+          <Text style={styles.motivationText}>
+            "Her küçük adım büyük bir zafere giden yoldur 🌟"
+          </Text>
+        </LinearGradient>
 
-        {/* Today's Summary */}
-        <Card style={styles.summaryCard} mode="elevated">
-          <Card.Content>
-            <Title style={styles.cardTitle}>Bugünkü Özet</Title>
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <MaterialCommunityIcons name="chart-line" size={24} color="#10B981" />
-                <Paragraph style={styles.statValue}>{todayEntries.length}</Paragraph>
-                <Paragraph style={styles.statLabel}>Kayıt</Paragraph>
-              </View>
-              <View style={styles.statItem}>
-                <MaterialCommunityIcons name="trophy" size={24} color="#F59E0B" />
-                <Paragraph style={styles.statValue}>
-                  {stats?.averageResistance?.toFixed(1) || '0'}
-                </Paragraph>
-                <Paragraph style={styles.statLabel}>Direnç</Paragraph>
-              </View>
-              <View style={styles.statItem}>
-                <MaterialCommunityIcons name="trending-up" size={24} color="#3B82F6" />
-                <Paragraph style={styles.statValue}>
-                  {stats?.averageResistance?.toFixed(1) || '0'}
-                </Paragraph>
-                <Paragraph style={styles.statLabel}>Şiddet</Paragraph>
-              </View>
-            </View>
-          </Card.Content>
-        </Card>
+        {/* Streak Counter */}
+        <View style={styles.section}>
+          <StreakCounter 
+            data={dashboardData.streak} 
+            onActivityPress={handleActivityPress}
+          />
+        </View>
 
-        {/* Quick Actions */}
-        <Card style={styles.actionsCard} mode="elevated">
-          <Card.Content>
-            <Title style={styles.cardTitle}>Hızlı İşlemler</Title>
-            <View style={styles.actionButtons}>
-              <Button
-                mode="contained"
-                icon="plus"
-                onPress={() => router.push('/(tabs)/tracking')}
-                style={[styles.actionButton, { backgroundColor: '#10B981' }]}
-                contentStyle={styles.buttonContent}
-              >
-                Kayıt Ekle
-              </Button>
-              <Button
-                mode="contained"
-                icon="dumbbell"
-                onPress={() => router.push('/(tabs)/erp')}
-                style={[styles.actionButton, { backgroundColor: '#3B82F6' }]}
-                contentStyle={styles.buttonContent}
-              >
-                ERP Başlat
-              </Button>
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Recent Activity */}
-        {todayEntries.length > 0 && (
-          <Card style={styles.activityCard} mode="elevated">
+        {/* Today's Overview */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📅 Bugün Özet</Text>
+          <Card style={styles.statsCard}>
             <Card.Content>
-              <Title style={styles.cardTitle}>Son Aktiviteler</Title>
-              {todayEntries.slice(0, 3).map((entry, index) => (
-                <View key={index} style={styles.activityItem}>
-                  <Chip
-                    icon="clock"
-                    style={styles.activityChip}
-                    textStyle={styles.chipText}
-                  >
-                    {new Date(entry.timestamp).toLocaleTimeString('tr-TR', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </Chip>
-                  <Paragraph style={styles.activityText}>
-                    {entry.type} - Şiddet: {entry.severity}/10
-                  </Paragraph>
+              <View style={styles.statsGrid}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>{dashboardData.todayStats.compulsionCount}</Text>
+                  <Text style={styles.statLabel}>Kompulsiyon</Text>
                 </View>
-              ))}
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>{dashboardData.todayStats.erpMinutes}dk</Text>
+                  <Text style={styles.statLabel}>ERP Egzersizi</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>{dashboardData.todayStats.resistanceAverage}/10</Text>
+                  <Text style={styles.statLabel}>Avg Direnç</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>{dashboardData.todayStats.anxietyReduction}%</Text>
+                  <Text style={styles.statLabel}>Anksiyete ↓</Text>
+                </View>
+              </View>
             </Card.Content>
           </Card>
-        )}
+        </View>
 
-        {/* Daily Tip */}
-        <Card style={styles.tipCard} mode="elevated">
-          <Card.Content>
-            <View style={styles.tipHeader}>
-              <MaterialCommunityIcons name="lightbulb" size={20} color="#F59E0B" />
-              <Title style={styles.tipTitle}>Günün İpucu</Title>
-            </View>
-            <Paragraph style={styles.tipText}>
-              Kompülsiyonlarla başa çıkarken, nefes egzersizleri yaparak 
-              anksiyetenizi azaltabilirsiniz. Derin nefes alın ve yavaşça verin.
-            </Paragraph>
-          </Card.Content>
-        </Card>
+        {/* Weekly Progress */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📊 Haftalık İlerleme</Text>
+          <Card style={styles.progressCard}>
+            <Card.Content>
+              <View style={styles.progressHeader}>
+                <Text style={styles.progressTitle}>
+                  {getTrendIcon(dashboardData.weeklyProgress.trend)} 
+                  %{dashboardData.weeklyProgress.improvement} İyileşme
+                </Text>
+                <Chip 
+                  icon="trending-up" 
+                  style={[styles.trendChip, { backgroundColor: '#d4edda' }]}
+                  textStyle={{ color: '#155724' }}
+                >
+                  Pozitif Trend
+                </Chip>
+              </View>
+              <Text style={styles.progressDescription}>
+                Geçen haftaya göre kompulsiyon sıklığında azalma ve direnç seviyesinde artış gözleniyor. Harika iş çıkarıyorsun! 👏
+              </Text>
+            </Card.Content>
+          </Card>
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>⚡ Hızlı İşlemler</Text>
+          <View style={styles.quickActionsGrid}>
+            {dashboardData.quickActions.map((action) => (
+              <Card 
+                key={action.id} 
+                style={[styles.quickActionCard, { borderLeftColor: action.color }]}
+                onPress={() => handleQuickAction(action.route)}
+              >
+                <Card.Content style={styles.quickActionContent}>
+                  <Text style={styles.quickActionIcon}>{action.icon}</Text>
+                  <Text style={styles.quickActionTitle}>{action.title}</Text>
+                </Card.Content>
+              </Card>
+            ))}
+          </View>
+        </View>
+
+        {/* Personalized Tips */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>💡 Kişisel Öneriler</Text>
+          {dashboardData.personalizedTips.map((tip) => (
+            <Card key={tip.id} style={styles.tipCard}>
+              <Card.Content>
+                <View style={styles.tipHeader}>
+                  <Text style={styles.tipIcon}>{getTipIcon(tip.type)}</Text>
+                  <View style={styles.tipContent}>
+                    <Text style={styles.tipTitle}>{tip.title}</Text>
+                    <Text style={styles.tipDescription}>{tip.description}</Text>
+                  </View>
+                  <Button 
+                    mode="outlined" 
+                    compact
+                    style={styles.tipButton}
+                  >
+                    {tip.action}
+                  </Button>
+                </View>
+              </Card.Content>
+            </Card>
+          ))}
+        </View>
+
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* Floating Action Button */}
       <FAB
         icon="plus"
         style={styles.fab}
-        onPress={() => router.push('/(tabs)/tracking')}
-        label="Kayıt"
+        onPress={() => router.push('/tracking')}
+        label="Hızlı Kayıt"
       />
-    </ScreenLayout>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  welcomeCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
-  },
-  welcomeContent: {
-    paddingVertical: 20,
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
   },
   welcomeHeader: {
-    flexDirection: 'row',
+    padding: 24,
+    paddingTop: 40,
     alignItems: 'center',
   },
-  avatar: {
-    backgroundColor: '#10B981',
-  },
   welcomeText: {
-    marginLeft: 16,
-    flex: 1,
+    fontSize: 18,
+    color: 'white',
+    opacity: 0.9,
   },
-  welcomeTitle: {
+  userName: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
+    fontWeight: 'bold',
+    color: 'white',
+    marginTop: 4,
   },
-  motivationalText: {
-    fontSize: 16,
-    color: '#6B7280',
+  motivationText: {
+    fontSize: 14,
+    color: 'white',
+    opacity: 0.8,
+    marginTop: 8,
+    textAlign: 'center',
     fontStyle: 'italic',
   },
-  summaryCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
+  section: {
+    padding: 16,
   },
-  cardTitle: {
+  sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 16,
+    marginBottom: 12,
+    color: '#343a40',
   },
-  statsRow: {
+  statsCard: {
+    backgroundColor: 'white',
+  },
+  statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
@@ -223,83 +370,98 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  statValue: {
+  statNumber: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginTop: 8,
-    marginBottom: 4,
+    fontWeight: 'bold',
+    color: '#495057',
   },
   statLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#6c757d',
+    marginTop: 4,
     textAlign: 'center',
   },
-  actionsCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
+  progressCard: {
+    backgroundColor: 'white',
   },
-  actionButtons: {
+  progressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    borderRadius: 12,
-  },
-  buttonContent: {
-    paddingVertical: 8,
-  },
-  activityCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
-  },
-  activityItem: {
-    flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
   },
-  activityChip: {
-    marginRight: 12,
+  progressTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#495057',
   },
-  chipText: {
-    fontSize: 12,
+  trendChip: {
+    height: 32,
   },
-  activityText: {
-    flex: 1,
+  progressDescription: {
     fontSize: 14,
-    color: '#4B5563',
+    lineHeight: 20,
+    color: '#6c757d',
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  quickActionCard: {
+    width: '48%',
+    marginBottom: 12,
+    backgroundColor: 'white',
+    borderLeftWidth: 4,
+  },
+  quickActionContent: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  quickActionIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  quickActionTitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    textAlign: 'center',
+    color: '#495057',
   },
   tipCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    marginBottom: 100,
-    backgroundColor: '#FEF3C7',
+    marginBottom: 12,
+    backgroundColor: 'white',
   },
   tipHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+  },
+  tipIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  tipContent: {
+    flex: 1,
   },
   tipTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#92400E',
-    marginLeft: 8,
-  },
-  tipText: {
     fontSize: 14,
-    color: '#92400E',
-    lineHeight: 20,
+    fontWeight: '600',
+    color: '#495057',
+    marginBottom: 2,
+  },
+  tipDescription: {
+    fontSize: 13,
+    color: '#6c757d',
+    lineHeight: 18,
+  },
+  tipButton: {
+    marginLeft: 8,
   },
   fab: {
     position: 'absolute',
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: '#10B981',
+    backgroundColor: '#667eea',
   },
 });

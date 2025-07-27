@@ -1,333 +1,253 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
-import { Text, Card, Button, RadioButton, ProgressBar } from 'react-native-paper';
-import Toast from 'react-native-toast-message';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Card, Text, Button, ProgressBar, RadioButton } from 'react-native-paper';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface YBOCSQuestion {
   id: string;
-  category: 'obsessions' | 'compulsions';
-  text: string;
-  textEn: string;
+  category: 'obsession' | 'compulsion';
+  question: string;
+  options: { value: number; label: string; description: string }[];
 }
 
 const YBOCS_QUESTIONS: YBOCSQuestion[] = [
-  // Obsesyon Soruları (1-5)
+  // Obsession Questions (1-5)
   {
     id: 'obs_time',
-    category: 'obsessions',
-    text: 'Obsesif düşüncelerinize günde ne kadar zaman harcıyorsunuz?',
-    textEn: 'How much time do you spend on obsessive thoughts per day?'
+    category: 'obsession',
+    question: 'Obsesyonlar ne kadar vaktinizi alıyor?',
+    options: [
+      { value: 0, label: 'Hiç', description: 'Obsesyonum yok' },
+      { value: 1, label: 'Hafif', description: 'Günde 1 saatten az' },
+      { value: 2, label: 'Orta', description: 'Günde 1-3 saat arası' },
+      { value: 3, label: 'Şiddetli', description: 'Günde 3-8 saat arası' },
+      { value: 4, label: 'Aşırı', description: 'Günde 8 saatten fazla' },
+    ],
   },
   {
     id: 'obs_interference',
-    category: 'obsessions',
-    text: 'Obsesif düşünceler günlük aktivitelerinizi ne kadar engelliyor?',
-    textEn: 'How much do obsessive thoughts interfere with your daily activities?'
+    category: 'obsession',
+    question: 'Obsesyonlar sosyal ve iş hayatınızı ne kadar etkiliyor?',
+    options: [
+      { value: 0, label: 'Hiç', description: 'Etkilemiyor' },
+      { value: 1, label: 'Hafif', description: 'Biraz gecikme' },
+      { value: 2, label: 'Orta', description: 'Belirgin gecikme' },
+      { value: 3, label: 'Şiddetli', description: 'Önemli bozulma' },
+      { value: 4, label: 'Aşırı', description: 'İşlev görememe' },
+    ],
   },
   {
     id: 'obs_distress',
-    category: 'obsessions',
-    text: 'Obsesif düşünceler ne kadar sıkıntı yaratıyor?',
-    textEn: 'How much distress do obsessive thoughts cause?'
+    category: 'obsession',
+    question: 'Obsesyonlar ne kadar sıkıntı veriyor?',
+    options: [
+      { value: 0, label: 'Hiç', description: 'Sıkıntı vermiyor' },
+      { value: 1, label: 'Hafif', description: 'Biraz rahatsız edici' },
+      { value: 2, label: 'Orta', description: 'Oldukça rahatsız edici' },
+      { value: 3, label: 'Şiddetli', description: 'Çok rahatsız edici' },
+      { value: 4, label: 'Aşırı', description: 'Dayanılmaz' },
+    ],
   },
   {
     id: 'obs_resistance',
-    category: 'obsessions',
-    text: 'Obsesif düşüncelere ne kadar direniyorsunuz?',
-    textEn: 'How much do you resist obsessive thoughts?'
+    category: 'obsession',
+    question: 'Obsesyonlara ne kadar direnebiliyorsunuz?',
+    options: [
+      { value: 0, label: 'Her zaman', description: 'Tam direnç' },
+      { value: 1, label: 'Çok', description: 'Çok direnç' },
+      { value: 2, label: 'Orta', description: 'Orta direnç' },
+      { value: 3, label: 'Az', description: 'Az direnç' },
+      { value: 4, label: 'Hiç', description: 'Direnç yok' },
+    ],
   },
   {
     id: 'obs_control',
-    category: 'obsessions',
-    text: 'Obsesif düşüncelerinizi ne kadar kontrol edebiliyorsunuz?',
-    textEn: 'How much control do you have over obsessive thoughts?'
+    category: 'obsession',
+    question: 'Obsesyonlarınız üzerinde ne kadar kontrolünüz var?',
+    options: [
+      { value: 0, label: 'Tam', description: 'Tam kontrol' },
+      { value: 1, label: 'Çok', description: 'Çok kontrol' },
+      { value: 2, label: 'Orta', description: 'Orta kontrol' },
+      { value: 3, label: 'Az', description: 'Az kontrol' },
+      { value: 4, label: 'Hiç', description: 'Kontrol yok' },
+    ],
   },
-  // Kompulsiyon Soruları (6-10)
+  // Compulsion Questions (6-10)
   {
     id: 'comp_time',
-    category: 'compulsions',
-    text: 'Kompulsif davranışlarınıza günde ne kadar zaman harcıyorsunuz?',
-    textEn: 'How much time do you spend on compulsive behaviors per day?'
+    category: 'compulsion',
+    question: 'Kompulsiyonlar ne kadar vaktinizi alıyor?',
+    options: [
+      { value: 0, label: 'Hiç', description: 'Kompulsiyonum yok' },
+      { value: 1, label: 'Hafif', description: 'Günde 1 saatten az' },
+      { value: 2, label: 'Orta', description: 'Günde 1-3 saat arası' },
+      { value: 3, label: 'Şiddetli', description: 'Günde 3-8 saat arası' },
+      { value: 4, label: 'Aşırı', description: 'Günde 8 saatten fazla' },
+    ],
   },
   {
     id: 'comp_interference',
-    category: 'compulsions',
-    text: 'Kompulsif davranışlar günlük aktivitelerinizi ne kadar engelliyor?',
-    textEn: 'How much do compulsive behaviors interfere with your daily activities?'
+    category: 'compulsion',
+    question: 'Kompulsiyonlar sosyal ve iş hayatınızı ne kadar etkiliyor?',
+    options: [
+      { value: 0, label: 'Hiç', description: 'Etkilemiyor' },
+      { value: 1, label: 'Hafif', description: 'Biraz gecikme' },
+      { value: 2, label: 'Orta', description: 'Belirgin gecikme' },
+      { value: 3, label: 'Şiddetli', description: 'Önemli bozulma' },
+      { value: 4, label: 'Aşırı', description: 'İşlev görememe' },
+    ],
   },
   {
     id: 'comp_distress',
-    category: 'compulsions',
-    text: 'Kompulsif davranışları yapmadığınızda ne kadar sıkıntı hissediyorsunuz?',
-    textEn: 'How much distress do you feel when you don\'t perform compulsive behaviors?'
+    category: 'compulsion',
+    question: 'Kompulsiyonları yapmamak ne kadar sıkıntı veriyor?',
+    options: [
+      { value: 0, label: 'Hiç', description: 'Sıkıntı vermiyor' },
+      { value: 1, label: 'Hafif', description: 'Biraz rahatsız edici' },
+      { value: 2, label: 'Orta', description: 'Oldukça rahatsız edici' },
+      { value: 3, label: 'Şiddetli', description: 'Çok rahatsız edici' },
+      { value: 4, label: 'Aşırı', description: 'Dayanılmaz' },
+    ],
   },
   {
     id: 'comp_resistance',
-    category: 'compulsions',
-    text: 'Kompulsif davranışlara ne kadar direniyorsunuz?',
-    textEn: 'How much do you resist compulsive behaviors?'
+    category: 'compulsion',
+    question: 'Kompulsiyonlara ne kadar direnebiliyorsunuz?',
+    options: [
+      { value: 0, label: 'Her zaman', description: 'Tam direnç' },
+      { value: 1, label: 'Çok', description: 'Çok direnç' },
+      { value: 2, label: 'Orta', description: 'Orta direnç' },
+      { value: 3, label: 'Az', description: 'Az direnç' },
+      { value: 4, label: 'Hiç', description: 'Direnç yok' },
+    ],
   },
   {
     id: 'comp_control',
-    category: 'compulsions',
-    text: 'Kompulsif davranışlarınızı ne kadar kontrol edebiliyorsunuz?',
-    textEn: 'How much control do you have over compulsive behaviors?'
-  }
-];
-
-const RESPONSE_OPTIONS = [
-  { value: 0, label: 'Hiç (0 puan)', labelEn: 'None (0 points)' },
-  { value: 1, label: 'Hafif (1 puan)', labelEn: 'Mild (1 point)' },
-  { value: 2, label: 'Orta (2 puan)', labelEn: 'Moderate (2 points)' },
-  { value: 3, label: 'Şiddetli (3 puan)', labelEn: 'Severe (3 points)' },
-  { value: 4, label: 'Aşırı Şiddetli (4 puan)', labelEn: 'Extreme (4 points)' }
-];
-
-const SEVERITY_LEVELS = [
-  { min: 0, max: 7, level: 'Subclinical', levelTr: 'Subklinik', color: '#10B981' },
-  { min: 8, max: 15, level: 'Mild', levelTr: 'Hafif', color: '#F59E0B' },
-  { min: 16, max: 23, level: 'Moderate', levelTr: 'Orta', color: '#EF4444' },
-  { min: 24, max: 31, level: 'Severe', levelTr: 'Şiddetli', color: '#7C2D12' },
-  { min: 32, max: 40, level: 'Extreme', levelTr: 'Aşırı Şiddetli', color: '#450A0A' }
+    category: 'compulsion',
+    question: 'Kompulsiyonlarınız üzerinde ne kadar kontrolünüz var?',
+    options: [
+      { value: 0, label: 'Tam', description: 'Tam kontrol' },
+      { value: 1, label: 'Çok', description: 'Çok kontrol' },
+      { value: 2, label: 'Orta', description: 'Orta kontrol' },
+      { value: 3, label: 'Az', description: 'Az kontrol' },
+      { value: 4, label: 'Hiç', description: 'Kontrol yok' },
+    ],
+  },
 ];
 
 interface YBOCSAssessmentProps {
-  onComplete?: () => void;
+  onComplete: (result: YBOCSResult) => void;
+  onSkip?: () => void;
 }
 
-export function YBOCSAssessment({ onComplete }: YBOCSAssessmentProps) {
-  const { user } = useAuth();
-  const { language, t } = useLanguage();
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [responses, setResponses] = useState<{[key: string]: number}>({});
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [loading, setLoading] = useState(false);
+interface YBOCSResult {
+  answers: Record<string, number>;
+  obsessionScore: number;
+  compulsionScore: number;
+  totalScore: number;
+  severity: string;
+}
 
-  const handleResponse = (value: number) => {
-    const questionId = YBOCS_QUESTIONS[currentQuestion].id;
-    setResponses(prev => ({ ...prev, [questionId]: value }));
+export function YBOCSAssessment({ onComplete, onSkip }: YBOCSAssessmentProps) {
+  const { t } = useTranslation();
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+
+  const calculateResults = (): YBOCSResult => {
+    const obsessionScore = YBOCS_QUESTIONS
+      .filter(q => q.category === 'obsession')
+      .reduce((sum, q) => sum + (answers[q.id] || 0), 0);
+
+    const compulsionScore = YBOCS_QUESTIONS
+      .filter(q => q.category === 'compulsion')
+      .reduce((sum, q) => sum + (answers[q.id] || 0), 0);
+
+    const totalScore = obsessionScore + compulsionScore;
+
+    let severity = 'Subklinik';
+    if (totalScore >= 32) severity = 'Çok Şiddetli';
+    else if (totalScore >= 24) severity = 'Şiddetli';
+    else if (totalScore >= 16) severity = 'Orta';
+    else if (totalScore >= 8) severity = 'Hafif';
+
+    return {
+      answers,
+      obsessionScore,
+      compulsionScore,
+      totalScore,
+      severity,
+    };
   };
 
-  const handleNext = () => {
+  const handleAnswer = (value: number) => {
     const questionId = YBOCS_QUESTIONS[currentQuestion].id;
-    if (responses[questionId] === undefined) {
-      Toast.show({
-        type: 'error',
-        text1: 'Cevap Gerekli',
-        text2: 'Lütfen bir seçenek işaretleyiniz',
-      });
-      return;
-    }
+    const newAnswers = { ...answers, [questionId]: value };
+    setAnswers(newAnswers);
 
     if (currentQuestion < YBOCS_QUESTIONS.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else {
-      completeAssessment();
+      // Assessment completed
+      const result = calculateResults();
+      onComplete(result);
     }
   };
 
-  const handlePrevious = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
-    }
-  };
-
-  const calculateScore = () => {
-    const obsessionScore = YBOCS_QUESTIONS
-      .filter(q => q.category === 'obsessions')
-      .reduce((sum, q) => sum + (responses[q.id] || 0), 0);
-
-    const compulsionScore = YBOCS_QUESTIONS
-      .filter(q => q.category === 'compulsions')
-      .reduce((sum, q) => sum + (responses[q.id] || 0), 0);
-
-    const totalScore = obsessionScore + compulsionScore;
-
-    return { obsessionScore, compulsionScore, totalScore };
-  };
-
-  const getSeverityLevel = (score: number) => {
-    return SEVERITY_LEVELS.find(level => score >= level.min && score <= level.max);
-  };
-
-  const completeAssessment = async () => {
-    setLoading(true);
-    try {
-      const scores = calculateScore();
-      const severity = getSeverityLevel(scores.totalScore);
-
-      const assessmentResult = {
-        userId: user?.uid,
-        responses,
-        scores,
-        severity,
-        completedAt: new Date().toISOString(),
-        type: 'ybocs'
-      };
-
-      await AsyncStorage.setItem(
-        `ybocs_assessment_${user?.uid}_${Date.now()}`, 
-        JSON.stringify(assessmentResult)
-      );
-
-      await AsyncStorage.setItem(
-        `latest_ybocs_${user?.uid}`,
-        JSON.stringify(assessmentResult)
-      );
-
-      setIsCompleted(true);
-
-      Toast.show({
-        type: 'success',
-        text1: '✅ Değerlendirme Tamamlandı',
-        text2: `Toplam puanınız: ${scores.totalScore}/40`
-      });
-
-      // Call onComplete callback if provided
-      if (onComplete) {
-        setTimeout(onComplete, 1500);
-      }
-
-    } catch (error) {
-      console.error('Assessment save error:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Hata',
-        text2: 'Değerlendirme kaydedilemedi',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const renderResults = () => {
-    const scores = calculateScore();
-    const severity = getSeverityLevel(scores.totalScore);
-
-    return (
-      <Card style={styles.resultsCard}>
-        <Card.Content>
-          <Text variant="headlineSmall" style={styles.resultsTitle}>
-            Y-BOCS Değerlendirme Sonuçları
-          </Text>
-
-          <View style={styles.scoreSection}>
-            <Text variant="titleMedium" style={styles.scoreTitle}>
-              Toplam Puan: {scores.totalScore}/40
-            </Text>
-
-            <View style={[styles.severityBadge, { backgroundColor: severity?.color }]}>
-              <Text style={styles.severityText}>
-                {language === 'tr' ? severity?.levelTr : severity?.level}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.subscores}>
-            <View style={styles.subscore}>
-              <Text variant="bodyMedium">Obsesyonlar:</Text>
-              <Text variant="titleMedium">{scores.obsessionScore}/20</Text>
-            </View>
-            <View style={styles.subscore}>
-              <Text variant="bodyMedium">Kompulsiyonlar:</Text>
-              <Text variant="titleMedium">{scores.compulsionScore}/20</Text>
-            </View>
-          </View>
-
-          <Text variant="bodyMedium" style={styles.disclaimer}>
-            Bu test sadece bilgilendirme amaçlıdır. Profesyonel tanı için uzman hekim görüşü alınız.
-          </Text>
-
-          <Button
-            mode="contained"
-            onPress={() => setIsCompleted(false)}
-            style={styles.retakeButton}
-          >
-            Tekrar Değerlendir
-          </Button>
-        </Card.Content>
-      </Card>
-    );
-  };
-
-  if (isCompleted) {
-    return (
-      <ScrollView style={styles.container}>
-        {renderResults()}
-      </ScrollView>
-    );
-  }
-
-  const progress = (currentQuestion + 1) / YBOCS_QUESTIONS.length;
   const question = YBOCS_QUESTIONS[currentQuestion];
-  const questionText = language === 'tr' ? question.text : question.textEn;
+  const progress = (currentQuestion + 1) / YBOCS_QUESTIONS.length;
 
   return (
     <ScrollView style={styles.container}>
       <Card style={styles.card}>
         <Card.Content>
-          <Text variant="headlineSmall" style={styles.title}>
-            Y-BOCS Değerlendirmesi
+          <Text style={styles.title}>Y-BOCS Değerlendirmesi</Text>
+          <Text style={styles.subtitle}>
+            {currentQuestion + 1} / {YBOCS_QUESTIONS.length}
           </Text>
 
-          <Text variant="bodyMedium" style={styles.subtitle}>
-            Soru {currentQuestion + 1} / {YBOCS_QUESTIONS.length}
-          </Text>
+          <ProgressBar progress={progress} style={styles.progress} />
 
-          <ProgressBar 
-            progress={progress} 
-            style={styles.progressBar}
-            color="#10B981"
-          />
+          <Text style={styles.question}>{question.question}</Text>
 
-          <View style={styles.questionSection}>
-            <Text variant="titleMedium" style={styles.questionText}>
-              {questionText}
-            </Text>
-
-            <View style={styles.optionsSection}>
-              {RESPONSE_OPTIONS.map((option) => (
-                <View key={option.value} style={styles.optionRow}>
-                  <RadioButton
-                    value={option.value.toString()}
-                    status={responses[question.id] === option.value ? 'checked' : 'unchecked'}
-                    onPress={() => handleResponse(option.value)}
-                  />
-                  <Text 
-                    variant="bodyMedium" 
-                    style={styles.optionText}
-                    onPress={() => handleResponse(option.value)}
-                  >
-                    {language === 'tr' ? option.label : option.labelEn}
+          <View style={styles.optionsContainer}>
+            {question.options.map((option, index) => (
+              <Card key={index} style={styles.optionCard}>
+                <Card.Content style={styles.optionContent}>
+                  <View style={styles.optionHeader}>
+                    <RadioButton
+                      value={option.value.toString()}
+                      status={answers[question.id] === option.value ? 'checked' : 'unchecked'}
+                      onPress={() => handleAnswer(option.value)}
+                    />
+                    <Text style={styles.optionLabel}>{option.label}</Text>
+                  </View>
+                  <Text style={styles.optionDescription}>
+                    {option.description}
                   </Text>
-                </View>
-              ))}
-            </View>
+                </Card.Content>
+              </Card>
+            ))}
           </View>
 
-          <View style={styles.buttonRow}>
+          {currentQuestion > 0 && (
             <Button
               mode="outlined"
-              onPress={handlePrevious}
-              disabled={currentQuestion === 0}
-              style={styles.button}
+              onPress={() => setCurrentQuestion(currentQuestion - 1)}
+              style={styles.backButton}
             >
-              Önceki
+              Önceki Soru
             </Button>
+          )}
 
+          {onSkip && (
             <Button
-              mode="contained"
-              onPress={handleNext}
-              loading={loading}
-              style={styles.button}
-              buttonColor="#10B981"
+              mode="text"
+              onPress={onSkip}
+              style={styles.skipButton}
             >
-              {currentQuestion === YBOCS_QUESTIONS.length - 1 ? 'Tamamla' : 'İleri'}
+              Şimdilik Atla
             </Button>
-          </View>
+          )}
         </Card.Content>
       </Card>
     </ScrollView>
@@ -338,103 +258,63 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#F9FAFB',
   },
   card: {
-    elevation: 2,
-    borderRadius: 12,
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: 8,
-    color: '#1F2937',
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    textAlign: 'center',
-    color: '#6B7280',
     marginBottom: 16,
   },
-  progressBar: {
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+    opacity: 0.7,
+  },
+  progress: {
+    marginBottom: 24,
     height: 8,
     borderRadius: 4,
-    marginBottom: 24,
   },
-  questionSection: {
-    marginBottom: 24,
-  },
-  questionText: {
+  question: {
+    fontSize: 18,
+    fontWeight: '600',
     marginBottom: 20,
-    color: '#1F2937',
     lineHeight: 24,
   },
-  optionsSection: {
-    paddingHorizontal: 8,
-  },
-  optionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 8,
-  },
-  optionText: {
-    flex: 1,
-    marginLeft: 12,
-    color: '#374151',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-  },
-  resultsCard: {
-    elevation: 2,
-    borderRadius: 12,
+  optionsContainer: {
     marginBottom: 20,
   },
-  resultsTitle: {
-    textAlign: 'center',
-    marginBottom: 24,
-    color: '#1F2937',
-    fontWeight: 'bold',
-  },
-  scoreSection: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  scoreTitle: {
+  optionCard: {
     marginBottom: 12,
-    color: '#1F2937',
-    fontWeight: '600',
+    backgroundColor: '#f8f9fa',
   },
-  severityBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+  optionContent: {
+    paddingVertical: 12,
   },
-  severityText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  subscores: {
+  optionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 24,
-  },
-  subscore: {
     alignItems: 'center',
+    marginBottom: 4,
   },
-  disclaimer: {
-    textAlign: 'center',
-    color: '#6B7280',
+  optionLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  optionDescription: {
+    fontSize: 14,
+    marginLeft: 40,
+    opacity: 0.7,
     fontStyle: 'italic',
-    marginBottom: 20,
-    lineHeight: 20,
   },
-  retakeButton: {
+  backButton: {
+    marginBottom: 12,
+  },
+  skipButton: {
     marginTop: 8,
   },
 });

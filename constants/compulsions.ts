@@ -152,7 +152,7 @@ export const INTENSITY_LEVELS = [
   { value: 10, label: 'Maksimum', labelEn: 'Maximum', color: '#B91C1C' }
 ];
 
-export const RESISTANCE_LEVELS = [
+export const RESISTANCE_LEVELS_OLD = [
   { value: 1, label: 'Hiç Direnmedim', labelEn: 'No Resistance', color: '#B91C1C' },
   { value: 2, label: 'Çok Az', labelEn: 'Very Little', color: '#DC2626' },
   { value: 3, label: 'Az', labelEn: 'Little', color: '#EA580C' },
@@ -183,9 +183,38 @@ export const getIntensityLevel = (value: number) => {
 };
 
 export const getResistanceLevel = (value: number) => {
-  return RESISTANCE_LEVELS.find(level => level.value === value) || RESISTANCE_LEVELS[0];
+  return RESISTANCE_LEVELS_OLD.find(level => level.value === value) || RESISTANCE_LEVELS_OLD[0];
 };
 
 export const getMoodLevel = (value: string) => {
   return MOOD_LEVELS.find(mood => mood.value === value) || MOOD_LEVELS[2];
-}; 
+};
+
+export const COMPULSION_TYPES = [
+  { id: 'washing', title: 'Yıkama/Temizlik', icon: '🧼', color: '#4ECDC4', description: 'El yıkama, duş alma, temizlik ritüelleri' },
+  { id: 'checking', title: 'Kontrol Etme', icon: '🔍', color: '#FF6B35', description: 'Kapı, gaz, elektrik kontrolleri' },
+  { id: 'counting', title: 'Sayma', icon: '🔢', color: '#45B7D1', description: 'Nesneler, adımlar, kelimeler sayma' },
+  { id: 'arranging', title: 'Düzenleme/Simetri', icon: '📐', color: '#96CEB4', description: 'Nesneleri düzenleme, simetri oluşturma' },
+  { id: 'hoarding', title: 'Biriktirme', icon: '📦', color: '#F7DC6F', description: 'Gereksiz eşyaları biriktirme' },
+  { id: 'mental', title: 'Mental Ritüeller', icon: '🧠', color: '#BB8FCE', description: 'Zihinsel sayma, dua etme, tekrarlama' },
+  { id: 'repeating', title: 'Tekrarlama', icon: '🔄', color: '#F1948A', description: 'Hareketleri, kelimeleri tekrarlama' },
+  { id: 'touching', title: 'Dokunma', icon: '👆', color: '#85C1E9', description: 'Belirli nesnelere dokunma ritüelleri' },
+  { id: 'religious', title: 'Dini/Ahlaki', icon: '🙏', color: '#D5A6BD', description: 'Dini ritüeller, günah çıkarma' },
+  { id: 'other', title: 'Diğer', icon: '❓', color: '#AEB6BF', description: 'Diğer kompulsiyon türleri' },
+] as const;
+
+export const SEVERITY_LEVELS = {
+  0: { label: 'Hiç', color: '#27AE60', description: 'Semptom yok' },
+  1: { label: 'Çok Hafif', color: '#F39C12', description: 'Günde 1 saatten az' },
+  2: { label: 'Hafif', color: '#E67E22', description: 'Günde 1-3 saat' },
+  3: { label: 'Orta', color: '#E74C3C', description: 'Günde 3-8 saat' },
+  4: { label: 'Şiddetli', color: '#8E44AD', description: 'Günde 8+ saat' },
+} as const;
+
+export const RESISTANCE_LEVELS = {
+  1: { label: 'Hiç Direnemem', color: '#E74C3C' },
+  2: { label: 'Çok Az', color: '#F39C12' },
+  3: { label: 'Biraz', color: '#F1C40F' },
+  4: { label: 'Orta', color: '#27AE60' },
+  5: { label: 'Çok İyi', color: '#2ECC71' },
+} as const;
