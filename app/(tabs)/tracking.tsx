@@ -1,44 +1,223 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Card, Title, Button, Segmented, FAB } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ScreenLayout } from '@/components/layout/ScreenLayout';
 import { CompulsionQuickEntry } from '@/components/forms/CompulsionQuickEntry';
-import { CompulsionEntry } from '@/types/compulsion';
+import { CompulsionHistory } from '@/components/compulsions/CompulsionHistory';
+import { CompulsionStats } from '@/components/compulsions/CompulsionStats';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function TrackingScreen() {
-  const [lastEntry, setLastEntry] = useState<CompulsionEntry | null>(null);
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<string>('entry');
+  const [showQuickEntry, setShowQuickEntry] = useState(false);
 
-  const handleCompulsionSaved = (entry: CompulsionEntry) => {
-    setLastEntry(entry);
-    // TODO: Refresh compulsion list, update stats
+  const handleEntrySubmit = () => {
+    setShowQuickEntry(false);
+    // Refresh data if needed
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'entry':
+        return (
+          <Card style={styles.card} mode="elevated">
+            <Card.Content style={styles.cardContent}>
+              <View style={styles.entryHeader}>
+                <MaterialCommunityIcons name="plus-circle" size={32} color="#10B981" />
+                <View style={styles.entryTextContainer}>
+                  <Title style={styles.entryTitle}>Yeni Kayıt Ekle</Title>
+                  <Title style={styles.entrySubtitle}>
+                    Kompülsiyonunuzu hızlıca kaydedin
+                  </Title>
+                </View>
+              </View>
+              <Button
+                mode="contained"
+                icon="plus"
+                onPress={() => setShowQuickEntry(true)}
+                style={styles.addButton}
+                contentStyle={styles.buttonContent}
+              >
+                Kayıt Başlat
+              </Button>
+            </Card.Content>
+          </Card>
+        );
+      case 'history':
+        return <CompulsionHistory />;
+      case 'stats':
+        return <CompulsionStats />;
+      default:
+        return null;
+    }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <CompulsionQuickEntry onSave={handleCompulsionSaved} />
-    </SafeAreaView>
+    <ScreenLayout scrollable={false} backgroundColor="#FAFAFA">
+      <View style={styles.container}>
+        {/* Tab Navigation */}
+        <View style={styles.tabContainer}>
+          <Segmented
+            value={activeTab}
+            onValueChange={setActiveTab}
+            segments={[
+              {
+                value: 'entry',
+                label: 'Kayıt',
+                icon: 'plus-circle-outline',
+              },
+              {
+                value: 'history',
+                label: 'Geçmiş',
+                icon: 'history',
+              },
+              {
+                value: 'stats',
+                label: 'İstatistik',
+                icon: 'chart-line',
+              },
+            ]}
+            style={styles.segmentedControl}
+          />
+        </View>
+
+        {/* Content Area */}
+        <ScrollView style={styles.contentArea} showsVerticalScrollIndicator={false}>
+          {renderContent()}
+        </ScrollView>
+
+        {/* Quick Entry Modal */}
+        {showQuickEntry && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Title style={styles.modalTitle}>Hızlı Kayıt</Title>
+                <Button
+                  mode="text"
+                  onPress={() => setShowQuickEntry(false)}
+                  icon="close"
+                  style={styles.closeButton}
+                >
+                  Kapat
+                </Button>
+              </View>
+              <CompulsionQuickEntry
+                onSubmit={handleEntrySubmit}
+                onCancel={() => setShowQuickEntry(false)}
+              />
+            </View>
+          </View>
+        )}
+
+        {/* Floating Action Button */}
+        {activeTab !== 'entry' && (
+          <FAB
+            icon="plus"
+            style={styles.fab}
+            onPress={() => setShowQuickEntry(true)}
+            label="Kayıt"
+          />
+        )}
+      </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
   },
-  content: {
+  tabContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  segmentedControl: {
+    backgroundColor: '#F3F4F6',
+  },
+  contentArea: {
     flex: 1,
+    paddingTop: 16,
+  },
+  card: {
+    marginHorizontal: 16,
+    marginVertical: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  cardContent: {
+    paddingVertical: 24,
+  },
+  entryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  entryTextContainer: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  entryTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  entrySubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '400',
+  },
+  addButton: {
+    backgroundColor: '#10B981',
+    borderRadius: 12,
+  },
+  buttonContent: {
+    paddingVertical: 8,
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    zIndex: 1000,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#10b981',
-    marginBottom: 8,
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    margin: 16,
+    maxHeight: '80%',
+    width: '90%',
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
-    textAlign: 'center',
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  closeButton: {
+    margin: 0,
+  },
+  fab: {
+    position: 'absolute',
+    margin: 16,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#10B981',
   },
 });
