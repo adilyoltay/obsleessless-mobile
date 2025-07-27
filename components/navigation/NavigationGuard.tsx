@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
@@ -28,13 +27,13 @@ export function NavigationGuard({ children }: NavigationGuardProps) {
   useEffect(() => {
     if (authLoading) return;
     if (hasNavigatedRef.current) return;
-    
+
     const checkNavigation = async () => {
       try {
         const currentPath = segments.join('/');
         const inAuthGroup = segments[0] === '(auth)';
         const inTabsGroup = segments[0] === '(tabs)';
-        
+
         console.log('🧭 Navigation Guard Check:', {
           isAuthenticated: !!user,
           currentPath,
@@ -54,9 +53,9 @@ export function NavigationGuard({ children }: NavigationGuardProps) {
           // User is authenticated, check profile completion
           const profileCompleted = await AsyncStorage.getItem('profileCompleted');
           const userProfile = await AsyncStorage.getItem(`ocd_profile_${user.uid}`);
-          
+
           const isProfileComplete = profileCompleted === 'true' && userProfile;
-          
+
           if (!isProfileComplete) {
             // Profile not completed
             if (currentPath !== '(auth)/onboarding') {

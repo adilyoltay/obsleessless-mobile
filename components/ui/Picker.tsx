@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
+import RNPickerSelect from 'react-native-picker-select';
 
 interface PickerProps {
   selectedValue?: string;
