@@ -13,7 +13,7 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FAB, Card, Button, SegmentedButtons } from 'react-native-paper';
 
-// Custom UI Components
+// Custom UI Components  
 import { BottomSheet } from '@/components/ui/BottomSheet';
 
 // Feature Components
