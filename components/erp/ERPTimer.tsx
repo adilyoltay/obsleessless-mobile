@@ -21,7 +21,7 @@ export const ERPTimer: React.FC<ERPTimerProps> = ({
   const [anxietyHistory, setAnxietyHistory] = useState<number[]>([]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: NodeJS.Timeout | null = null;
 
     if (isRunning && timeRemaining > 0) {
       interval = setInterval(() => {
