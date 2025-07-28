@@ -8,13 +8,10 @@ public class AppDelegate: ExpoAppDelegate {
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
     self.window = UIWindow(frame: UIScreen.main.bounds)
-    
     self.window.backgroundColor = UIColor.white
     self.window.makeKeyAndVisible()
     
-    // Initialize Expo modules
-    _ = super.application(application, didFinishLaunchingWithOptions: launchOptions)
-    
-    return true
+    // Initialize Expo
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }

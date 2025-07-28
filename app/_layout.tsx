@@ -8,7 +8,6 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Toast from 'react-native-toast-message';
-import { PaperProvider } from 'react-native-paper';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
@@ -56,20 +55,18 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <PaperProvider>
-        <QueryClientProvider client={queryClient}>
-          <LanguageProvider>
-            <AuthProvider>
-              <NotificationProvider>
-                <NavigationGuard>
-                  <RootLayoutNav />
-                </NavigationGuard>
-              </NotificationProvider>
-            </AuthProvider>
-          </LanguageProvider>
-          <Toast />
-        </QueryClientProvider>
-      </PaperProvider>
+      <QueryClientProvider client={queryClient}>
+        <LanguageProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <NavigationGuard>
+                <RootLayoutNav />
+              </NavigationGuard>
+            </NotificationProvider>
+          </AuthProvider>
+        </LanguageProvider>
+        <Toast />
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 }
