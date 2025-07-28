@@ -11,11 +11,9 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FAB, Card, Button, SegmentedButtons } from 'react-native-paper';
 
 // Custom UI Components
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import { SegmentedButtons } from '@/components/ui/SegmentedButtons';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 
 // Feature Components
@@ -166,9 +164,9 @@ export default function TrackingScreen() {
         {/* Tab Navigation */}
         <View style={[styles.tabContainer, styles.segmentedButtons]}>
           <SegmentedButtons
-            selectedValue={activeTab}
-            onSelectionChange={handleTabChange}
-            options={[
+            value={activeTab}
+            onValueChange={handleTabChange}
+            buttons={[
               {
                 value: 'entry',
                 label: 'Kayıt',
