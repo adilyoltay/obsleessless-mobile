@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { View, StyleSheet, Vibration } from 'react-native';
 import { Text, Card, Button, SegmentedButtons } from 'react-native-paper';
@@ -85,7 +84,7 @@ export function CompulsionQuickEntry({ onSave, onCancel }: Props) {
   // Form submit işlemi - Master prompt: ≤ 15 saniyede, 2-3 dokunuşla kaydetme
   const onSubmit = async (data: CompulsionFormData) => {
     setLoading(true);
-    
+
     try {
       const entry = {
         id: Date.now().toString(),
@@ -110,13 +109,13 @@ export function CompulsionQuickEntry({ onSave, onCancel }: Props) {
 
       // Master prompt: Başarı haptic'i tetikle
       triggerHapticFeedback('success');
-      
+
       // Master prompt: "Kaydedildi!" Toast'ı göster
       showToast('Kaydedildi! 🌱');
 
       // Form'u sıfırla
       reset();
-      
+
       // Parent component'e başarı bildir
       onSave?.();
 
@@ -146,7 +145,7 @@ export function CompulsionQuickEntry({ onSave, onCancel }: Props) {
 
       <Card style={styles.formCard} mode="elevated">
         <Card.Content style={styles.cardContent}>
-          
+
           {/* Kompulsiyon Tipi - Master prompt: ikonlu SegmentedButtons */}
           <View style={styles.fieldContainer}>
             <Text style={styles.fieldLabel}>Kompulsiyon Türü</Text>
@@ -169,7 +168,7 @@ export function CompulsionQuickEntry({ onSave, onCancel }: Props) {
                 />
               )}
             />
-            
+
             {/* İkinci satır segmented buttons */}
             <Controller
               control={control}
@@ -190,7 +189,7 @@ export function CompulsionQuickEntry({ onSave, onCancel }: Props) {
                 />
               )}
             />
-            
+
             {errors.type && (
               <Text style={styles.errorText}>{errors.type.message}</Text>
             )}
@@ -202,7 +201,7 @@ export function CompulsionQuickEntry({ onSave, onCancel }: Props) {
             <Text style={styles.fieldDescription}>
               Ne kadar direnç gösterebildin?
             </Text>
-            
+
             <Controller
               control={control}
               name="resistanceLevel"
@@ -241,7 +240,7 @@ export function CompulsionQuickEntry({ onSave, onCancel }: Props) {
           {/* Süre - Master prompt: Stepper (simplified as input with +/- buttons) */}
           <View style={styles.fieldContainer}>
             <Text style={styles.fieldLabel}>Süre (Dakika)</Text>
-            
+
             <Controller
               control={control}
               name="duration"
@@ -257,12 +256,12 @@ export function CompulsionQuickEntry({ onSave, onCancel }: Props) {
                     icon="minus"
                     disabled={value <= 1}
                   />
-                  
+
                   <View style={styles.stepperValue}>
                     <Text style={styles.stepperValueText}>{value}</Text>
                     <Text style={styles.stepperUnit}>dk</Text>
                   </View>
-                  
+
                   <Button
                     mode="outlined"
                     onPress={() => {
@@ -276,7 +275,7 @@ export function CompulsionQuickEntry({ onSave, onCancel }: Props) {
                 </View>
               )}
             />
-            
+
             {errors.duration && (
               <Text style={styles.errorText}>{errors.duration.message}</Text>
             )}
@@ -293,7 +292,7 @@ export function CompulsionQuickEntry({ onSave, onCancel }: Props) {
             >
               İptal
             </Button>
-            
+
             <Button
               mode="contained"
               onPress={handleSubmit(onSubmit)}

@@ -1,4 +1,3 @@
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface Achievement {
@@ -561,7 +560,7 @@ class AchievementService {
     try {
       const logs = await AsyncStorage.getItem('compulsion_logs');
       if (!logs) return 0;
-      
+
       const parsedLogs = JSON.parse(logs);
       const resistanceSum = parsedLogs.reduce((sum: number, log: any) => sum + (log.resistance || 0), 0);
       return parsedLogs.length > 0 ? resistanceSum / parsedLogs.length : 0;
@@ -574,13 +573,13 @@ class AchievementService {
     try {
       const logs = await AsyncStorage.getItem('compulsion_logs');
       if (!logs) return [];
-      
+
       const today = new Date().toISOString().split('T')[0];
       const parsedLogs = JSON.parse(logs);
       const todayLogs = parsedLogs.filter((log: any) => 
         new Date(log.timestamp).toISOString().split('T')[0] === today
       );
-      
+
       return [...new Set(todayLogs.map((log: any) => log.type))];
     } catch {
       return [];
@@ -591,7 +590,7 @@ class AchievementService {
     try {
       const sessions = await AsyncStorage.getItem('erp_sessions');
       if (!sessions) return [];
-      
+
       const parsedSessions = JSON.parse(sessions);
       return [...new Set(parsedSessions.map((session: any) => session.category))];
     } catch {
@@ -603,7 +602,7 @@ class AchievementService {
     try {
       const assessments = await AsyncStorage.getItem('ybocs_history');
       if (!assessments) return 0;
-      
+
       const parsedAssessments = JSON.parse(assessments);
       // Implementation for calculating consecutive weekly assessments
       // This would need to check for assessments in consecutive weeks
@@ -622,7 +621,7 @@ class AchievementService {
     try {
       const logs = await AsyncStorage.getItem('compulsion_logs');
       if (!logs) return 0;
-      
+
       const parsedLogs = JSON.parse(logs);
       return parsedLogs.filter((log: any) => {
         const hour = new Date(log.timestamp).getHours();
@@ -637,7 +636,7 @@ class AchievementService {
     try {
       const logs = await AsyncStorage.getItem('compulsion_logs');
       if (!logs) return 0;
-      
+
       const parsedLogs = JSON.parse(logs);
       return parsedLogs.filter((log: any) => {
         const hour = new Date(log.timestamp).getHours();
@@ -654,7 +653,7 @@ class AchievementService {
     const totalPoints = this.achievements
       .filter(a => a.isUnlocked)
       .reduce((sum, a) => sum + a.points, 0);
-    
+
     const level = Math.floor(totalPoints / 100) + 1;
     const levelProgress = (totalPoints % 100) / 100;
 

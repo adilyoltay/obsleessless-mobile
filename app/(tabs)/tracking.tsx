@@ -5,6 +5,8 @@ import { Card, Title, Button, SegmentedButtons, FAB } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenLayout from '@/components/layout/ScreenLayout';
 import { CompulsionQuickEntry } from '@/components/forms/CompulsionQuickEntry';
+import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import { CompulsionHistory } from '@/components/compulsions/CompulsionHistory';
 import CompulsionStats from '@/components/compulsions/CompulsionStats';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -98,22 +100,22 @@ export default function TrackingScreen() {
           customSize={56}
         />
 
+        {/* Master Prompt: FAB for quick access */}
+        <FloatingActionButton
+          onPress={() => setShowQuickEntry(true)}
+          icon="plus"
+        />
+
         {/* Master Prompt: BottomSheet for Yolculuk #3 */}
-        {showQuickEntry && (
-          <View style={styles.bottomSheetOverlay}>
-            <Pressable 
-              style={styles.bottomSheetBackdrop}
-              onPress={() => setShowQuickEntry(false)}
-            />
-            <View style={styles.bottomSheetContent}>
-              <View style={styles.bottomSheetHandle} />
-              <CompulsionQuickEntry
-                onSave={() => handleEntrySubmit()}
-                onCancel={() => setShowQuickEntry(false)}
-              />
-            </View>
-          </View>
-        )}
+        <BottomSheet
+          isVisible={showQuickEntry}
+          onClose={() => setShowQuickEntry(false)}
+        >
+          <CompulsionQuickEntry
+            onSave={handleEntrySubmit}
+            onCancel={() => setShowQuickEntry(false)}
+          />
+        </BottomSheet>
       </View>
     </ScreenLayout>
   );
