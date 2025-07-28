@@ -395,14 +395,7 @@ class AchievementService {
 
     // Count-based achievements
     const totalLogs = await this.getTotalCompulsionLogs();
-    if (await this.updateProgressTo('frequent_tracker', totalLogs) && totalLogs >= 10) {
-      unlockedAchievements.push(this.achievements.find(a => a.id === 'frequent_tracker')!);
-    }
-    
-    if (await this.updateProgressTo('dedicated_tracker', totalLogs) && totalLogs >= 50) {
-      unlockedAchievements.push(this.achievements.find(a => a.id === 'dedicated_tracker')!);
-    }
-  }Progress('hundred_logs', totalLogs)) {
+    if (await this.updateProgress('hundred_logs', totalLogs)) {
       unlockedAchievements.push(this.achievements.find(a => a.id === 'hundred_logs')!);
     }
 
@@ -634,13 +627,6 @@ class AchievementService {
       return parsedLogs.filter((log: any) => {
         const hour = new Date(log.timestamp).getHours();
         return hour >= 6 && hour <= 10;
-      }).length;
-    } catch {
-      return 0;
-    }
-  }
-        const hour = new Date(log.timestamp).getHours();
-        return hour < 8;
       }).length;
     } catch {
       return 0;

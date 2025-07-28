@@ -89,21 +89,21 @@ export default function TrackingScreen() {
           {renderContent()}
         </ScrollView>
 
-        {/* Quick Entry Modal */}
+        {/* Master Prompt: Floating Action Button (FAB) - Merkezde ➕ ikonu */}
+        <FAB
+          icon="plus"
+          style={styles.fab}
+          onPress={() => setShowQuickEntry(true)}
+          color="#FFFFFF"
+          customSize={56}
+        />
+
+        {/* Master Prompt: BottomSheet for Yolculuk #3 */}
         {showQuickEntry && (
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Title style={styles.modalTitle}>Hızlı Kayıt</Title>
-                <Button
-                  mode="text"
-                  onPress={() => setShowQuickEntry(false)}
-                  icon="close"
-                  style={styles.closeButton}
-                >
-                  Kapat
-                </Button>
-              </View>
+          <View style={styles.bottomSheetOverlay}>
+            <View style={styles.bottomSheetBackdrop} />
+            <View style={styles.bottomSheetContent}>
+              <View style={styles.bottomSheetHandle} />
               <CompulsionQuickEntry
                 onSave={() => handleEntrySubmit()}
                 onCancel={() => setShowQuickEntry(false)}
@@ -169,45 +169,59 @@ const styles = StyleSheet.create({
   buttonContent: {
     paddingVertical: 8,
   },
-  modalOverlay: {
+  bottomSheetOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
     zIndex: 1000,
+    justifyContent: 'flex-end',
   },
-  modalContent: {
+  bottomSheetBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  bottomSheetContent: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    margin: 16,
-    maxHeight: '80%',
-    width: '90%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '85%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  closeButton: {
-    margin: 0,
+  bottomSheetHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#D1D5DB',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 8,
+    marginBottom: 8,
   },
   fab: {
     position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
+    right: 20,
+    bottom: 20,
     backgroundColor: '#10B981',
+    borderRadius: 28,
+    elevation: 8,
+    shadowColor: '#10B981',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
 });

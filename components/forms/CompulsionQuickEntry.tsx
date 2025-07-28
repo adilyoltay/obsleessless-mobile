@@ -1,468 +1,437 @@
+
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
-import { Text, Card, Button, Switch, TextInput } from 'react-native-paper';
-import { Picker } from '@react-native-picker/picker';
+import { View, StyleSheet, Vibration } from 'react-native';
+import { Text, Card, Button, SegmentedButtons } from 'react-native-paper';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import * as Haptics from 'expo-haptics';
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Slider } from '@/components/ui/Slider';
-import { Badge } from '@/components/ui/Badge';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { 
-  CompulsionEntry, 
-  CompulsionType, 
-  MoodLevel, 
-  QuickEntryFormData,
-  COMMON_TRIGGERS,
-  COMMON_LOCATIONS
-} from '@/types/compulsion';
+// Form validation schema
+const compulsionSchema = z.object({
+  type: z.string().min(1, 'Kompulsiyon türü gerekli'),
+  resistanceLevel: z.number().min(1).max(10),
+  duration: z.number().min(1).max(300)
+});
 
-import {
-  COMPULSION_CATEGORIES,
-  INTENSITY_LEVELS, 
-  RESISTANCE_LEVELS,
-  MOOD_LEVELS,
-  getCompulsionCategory,
-  getIntensityLevel,
-  getResistanceLevel,
-  getMoodLevel
-} from '@/constants/compulsions';
+type CompulsionFormData = z.infer<typeof compulsionSchema>;
 
 interface Props {
-  onSave?: (entry: CompulsionEntry) => void;
+  onSave?: () => void;
   onCancel?: () => void;
-  initialData?: Partial<QuickEntryFormData>;
 }
 
-export function CompulsionQuickEntry({ onSave, onCancel, initialData }: Props) {
-  const { user } = useAuth();
-  const { language, t } = useLanguage();
+// Altın Standart: Master prompt'ta belirtilen kompulsiyon tipleri (ikonlu SegmentedButtons için)
+const COMPULSION_TYPES = [
+  { value: 'washing', label: 'Temizlik', icon: 'shower' },
+  { value: 'checking', label: 'Kontrol', icon: 'check-circle' },
+  { value: 'counting', label: 'Sayma', icon: 'counter' },
+  { value: 'ordering', label: 'Düzen', icon: 'sort-variant' },
+  { value: 'mental', label: 'Zihinsel', icon: 'brain' },
+  { value: 'other', label: 'Diğer', icon: 'dots-horizontal' }
+];
 
-  // Form state
-  const [formData, setFormData] = useState<QuickEntryFormData>({
-    type: initialData?.type || 'washing',
-    intensity: initialData?.intensity || 5,
-    resistanceLevel: initialData?.resistanceLevel || 5,
-    duration: initialData?.duration || undefined,
-    triggers: initialData?.triggers || [],
-    notes: initialData?.notes || '',
-    completed: initialData?.completed || true,
-    helpUsed: initialData?.helpUsed || false,
-    mood: initialData?.mood || 'neutral'
+export function CompulsionQuickEntry({ onSave, onCancel }: Props) {
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const [loading, setLoading] = useState(false);
+
+  // React Hook Form setup
+  const { control, handleSubmit, reset, formState: { errors } } = useForm<CompulsionFormData>({
+    resolver: zodResolver(compulsionSchema),
+    defaultValues: {
+      type: 'washing',
+      resistanceLevel: 5,
+      duration: 5
+    }
   });
 
-  const [loading, setLoading] = useState(false);
-  const [selectedTriggers, setSelectedTriggers] = useState<string[]>(initialData?.triggers || []);
-
-  const updateFormData = (key: keyof QuickEntryFormData, value: any) => {
-    setFormData(prev => ({ ...prev, [key]: value }));
+  // Master prompt'ta belirtilen haptic geri bildirim fonksiyonları
+  const triggerHapticFeedback = (type: 'light' | 'success' | 'warning' | 'heavy') => {
+    switch (type) {
+      case 'light':
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        break;
+      case 'success':
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        break;
+      case 'warning':
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        break;
+      case 'heavy':
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        break;
+    }
   };
 
-  const toggleTrigger = (trigger: string) => {
-    const newTriggers = selectedTriggers.includes(trigger)
-      ? selectedTriggers.filter(t => t !== trigger)
-      : [...selectedTriggers, trigger];
-    
-    setSelectedTriggers(newTriggers);
-    updateFormData('triggers', newTriggers);
+  // Master prompt'ta belirtilen Toast gösterimi
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    Toast.show({
+      type,
+      text1: message,
+      position: 'top',
+      visibilityTime: 2000,
+      autoHide: true,
+      topOffset: 60
+    });
   };
 
-  const validateForm = (): boolean => {
-    if (!formData.type) {
-      Toast.show({
-        type: 'error',
-        text1: 'Hata',
-        text2: 'Kompülsiyon türü seçiniz'
-      });
-      return false;
-    }
-
-    if (formData.intensity < 1 || formData.intensity > 10) {
-      Toast.show({
-        type: 'error',
-        text1: 'Hata',
-        text2: 'Şiddet seviyesi 1-10 arasında olmalıdır'
-      });
-      return false;
-    }
-
-    if (formData.resistanceLevel < 1 || formData.resistanceLevel > 10) {
-      Toast.show({
-        type: 'error',
-        text1: 'Hata',
-        text2: 'Direnç seviyesi 1-10 arasında olmalıdır'
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSave = async () => {
-    if (!validateForm()) return;
-    if (!user?.uid) {
-      Toast.show({
-        type: 'error',
-        text1: 'Hata',
-        text2: 'Kullanıcı girişi gerekli'
-      });
-      return;
-    }
-
+  // Form submit işlemi - Master prompt: ≤ 15 saniyede, 2-3 dokunuşla kaydetme
+  const onSubmit = async (data: CompulsionFormData) => {
     setLoading(true);
+    
     try {
-      const now = new Date();
-      const entryId = `compulsion_${user.uid}_${now.getTime()}`;
-      
-      const compulsionEntry: CompulsionEntry = {
-        id: entryId,
-        userId: user.uid,
-        type: formData.type,
-        intensity: formData.intensity,
-        resistanceLevel: formData.resistanceLevel,
-        duration: formData.duration,
-        triggers: formData.triggers,
-        notes: formData.notes,
-        timestamp: now,
-        completed: formData.completed,
-        helpUsed: formData.helpUsed,
-        mood: formData.mood,
-        createdAt: now,
-        updatedAt: now
+      const entry = {
+        id: Date.now().toString(),
+        ...data,
+        timestamp: new Date().toISOString(),
+        userId: user?.uid
       };
 
-      // Save to AsyncStorage
-      await AsyncStorage.setItem(entryId, JSON.stringify(compulsionEntry));
-      
-      // Update user's compulsion list
-      const existingCompulsions = await AsyncStorage.getItem(`compulsions_${user.uid}`);
-      const compulsionList = existingCompulsions ? JSON.parse(existingCompulsions) : [];
-      compulsionList.push(entryId);
-      await AsyncStorage.setItem(`compulsions_${user.uid}`, JSON.stringify(compulsionList));
+      // AsyncStorage'a kaydet
+      const existingEntries = await AsyncStorage.getItem('compulsion_entries');
+      const entries = existingEntries ? JSON.parse(existingEntries) : [];
+      entries.push(entry);
+      await AsyncStorage.setItem('compulsion_entries', JSON.stringify(entries));
 
-      Toast.show({
-        type: 'success',
-        text1: 'Başarılı',
-        text2: 'Kompülsiyon kaydedildi'
-      });
-
-      onSave?.(compulsionEntry);
+      // Master prompt: Başarı haptic'i tetikle
+      triggerHapticFeedback('success');
       
-      // Reset form
-      setFormData({
-        type: 'washing',
-        intensity: 5,
-        resistanceLevel: 5,
-        duration: undefined,
-        triggers: [],
-        notes: '',
-        completed: true,
-        helpUsed: false,
-        mood: 'neutral'
-      });
-      setSelectedTriggers([]);
+      // Master prompt: "Kaydedildi!" Toast'ı göster
+      showToast('Kaydedildi! 🌱');
+
+      // Form'u sıfırla
+      reset();
+      
+      // Parent component'e başarı bildir
+      onSave?.();
 
     } catch (error) {
-      console.error('Compulsion save error:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Hata',
-        text2: 'Kompülsiyon kaydedilemedi'
-      });
+      console.error('Kompulsiyon kaydedilemedi:', error);
+      triggerHapticFeedback('warning');
+      showToast('Kaydetme sırasında hata oluştu', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const selectedCategory = getCompulsionCategory(formData.type);
-  const intensityLevel = getIntensityLevel(formData.intensity);
-  const resistanceLevel = getResistanceLevel(formData.resistanceLevel);
-  const currentMood = getMoodLevel(formData.mood!);
+  const handleCancel = () => {
+    triggerHapticFeedback('light');
+    reset();
+    onCancel?.();
+  };
 
   return (
-    <ScrollView style={styles.container}>
-      <Card style={styles.card}>
-        <Card.Content>
-          <Text variant="headlineSmall" style={styles.title}>
-            Kompülsiyon Kaydı
-          </Text>
+    <View style={styles.container}>
+      {/* Master prompt: Sakinlik ve güven inşa eden header */}
+      <View style={styles.header}>
+        <MaterialCommunityIcons name="plus-circle" size={24} color="#10B981" />
+        <Text style={styles.title}>Hızlı Kayıt</Text>
+        <Text style={styles.subtitle}>Bu anı kaydet, kontrolü ele al</Text>
+      </View>
 
-          {/* Kompülsiyon Türü */}
-          <View style={styles.section}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              Kompülsiyon Türü *
-            </Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={formData.type}
-                onValueChange={(value) => updateFormData('type', value)}
-                style={styles.picker}
-              >
-                {COMPULSION_CATEGORIES.map(category => (
-                  <Picker.Item
-                    key={category.id}
-                    label={`${category.icon} ${language === 'tr' ? category.name : category.nameEn}`}
-                    value={category.id}
-                  />
-                ))}
-              </Picker>
-            </View>
+      <Card style={styles.formCard} mode="elevated">
+        <Card.Content style={styles.cardContent}>
+          
+          {/* Kompulsiyon Tipi - Master prompt: ikonlu SegmentedButtons */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.fieldLabel}>Kompulsiyon Türü</Text>
+            <Controller
+              control={control}
+              name="type"
+              render={({ field: { onChange, value } }) => (
+                <SegmentedButtons
+                  value={value}
+                  onValueChange={(newValue) => {
+                    triggerHapticFeedback('light');
+                    onChange(newValue);
+                  }}
+                  buttons={COMPULSION_TYPES.slice(0, 3).map(type => ({
+                    value: type.value,
+                    label: type.label,
+                    icon: type.icon
+                  }))}
+                  style={styles.segmentedButtons}
+                />
+              )}
+            />
             
-            <View style={[styles.categoryInfo, { borderLeftColor: selectedCategory.color }]}>
-              <Text variant="bodyMedium" style={styles.categoryDescription}>
-                {language === 'tr' ? selectedCategory.description : selectedCategory.descriptionEn}
-              </Text>
-            </View>
-          </View>
-
-          {/* Şiddet Seviyesi */}
-          <View style={styles.section}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              Şiddet Seviyesi: {formData.intensity}/10
-            </Text>
-            <Text variant="bodySmall" style={[styles.levelLabel, { color: intensityLevel.color }]}>
-              {language === 'tr' ? intensityLevel.label : intensityLevel.labelEn}
-            </Text>
-            <Slider
-              value={formData.intensity}
-              onValueChange={(value) => updateFormData('intensity', value)}
-              minimumValue={1}
-              maximumValue={10}
-              step={1}
-              style={styles.slider}
-              minimumTrackTintColor={intensityLevel.color}
-              maximumTrackTintColor="#E5E7EB"
-              thumbStyle={[styles.sliderThumb, { backgroundColor: intensityLevel.color }]}
+            {/* İkinci satır segmented buttons */}
+            <Controller
+              control={control}
+              name="type"
+              render={({ field: { onChange, value } }) => (
+                <SegmentedButtons
+                  value={value}
+                  onValueChange={(newValue) => {
+                    triggerHapticFeedback('light');
+                    onChange(newValue);
+                  }}
+                  buttons={COMPULSION_TYPES.slice(3).map(type => ({
+                    value: type.value,
+                    label: type.label,
+                    icon: type.icon
+                  }))}
+                  style={styles.segmentedButtons}
+                />
+              )}
             />
-          </View>
-
-          {/* Direnç Seviyesi */}
-          <View style={styles.section}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              Direnç Seviyesi: {formData.resistanceLevel}/10
-            </Text>
-            <Text variant="bodySmall" style={[styles.levelLabel, { color: resistanceLevel.color }]}>
-              {language === 'tr' ? resistanceLevel.label : resistanceLevel.labelEn}
-            </Text>
-            <Slider
-              value={formData.resistanceLevel}
-              onValueChange={(value) => updateFormData('resistanceLevel', value)}
-              minimumValue={1}
-              maximumValue={10}
-              step={1}
-              style={styles.slider}
-              minimumTrackTintColor={resistanceLevel.color}
-              maximumTrackTintColor="#E5E7EB"
-              thumbStyle={[styles.sliderThumb, { backgroundColor: resistanceLevel.color }]}
-            />
-          </View>
-
-          {/* Süre */}
-          <View style={styles.section}>
-            <TextInput
-              label="Süre (dakika)"
-              value={formData.duration?.toString() || ''}
-              onChangeText={(text) => updateFormData('duration', text ? parseInt(text) : undefined)}
-              keyboardType="numeric"
-              style={styles.input}
-              placeholder="Kompülsiyona harcanan süre"
-            />
-          </View>
-
-          {/* Ruh Hali */}
-          <View style={styles.section}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              Ruh Haliniz
-            </Text>
-            <View style={styles.moodContainer}>
-              {MOOD_LEVELS.map(mood => (
-                <Badge
-                  key={mood.value}
-                  variant={formData.mood === mood.value ? 'solid' : 'outline'}
-                  onPress={() => updateFormData('mood', mood.value)}
-                  style={[
-                    styles.moodBadge,
-                    formData.mood === mood.value && { backgroundColor: mood.color }
-                  ]}
-                >
-                  {mood.emoji} {language === 'tr' ? mood.label : mood.labelEn}
-                </Badge>
-              ))}
-            </View>
-          </View>
-
-          {/* Tetikleyiciler */}
-          <View style={styles.section}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              Tetikleyiciler
-            </Text>
-            <View style={styles.triggersContainer}>
-              {COMMON_TRIGGERS.map(trigger => (
-                <Badge
-                  key={trigger}
-                  variant={selectedTriggers.includes(trigger) ? 'solid' : 'outline'}
-                  onPress={() => toggleTrigger(trigger)}
-                  style={styles.triggerBadge}
-                >
-                  {trigger}
-                </Badge>
-              ))}
-            </View>
-          </View>
-
-          {/* Switches */}
-          <View style={styles.section}>
-            <View style={styles.switchRow}>
-              <Text variant="bodyMedium">Kompülsiyonu tamamladım</Text>
-              <Switch
-                value={formData.completed}
-                onValueChange={(value) => updateFormData('completed', value)}
-              />
-            </View>
             
-            <View style={styles.switchRow}>
-              <Text variant="bodyMedium">Baş etme stratejisi kullandım</Text>
-              <Switch
-                value={formData.helpUsed}
-                onValueChange={(value) => updateFormData('helpUsed', value)}
-              />
-            </View>
-          </View>
-
-          {/* Notlar */}
-          <View style={styles.section}>
-            <TextInput
-              label="Notlar"
-              value={formData.notes}
-              onChangeText={(text) => updateFormData('notes', text)}
-              multiline
-              numberOfLines={3}
-              style={styles.input}
-              placeholder="Eklemek istediğiniz notlar..."
-            />
-          </View>
-
-          {/* Buttons */}
-          <View style={styles.buttonRow}>
-            {onCancel && (
-              <Button
-                mode="outlined"
-                onPress={onCancel}
-                style={styles.button}
-              >
-                İptal
-              </Button>
+            {errors.type && (
+              <Text style={styles.errorText}>{errors.type.message}</Text>
             )}
+          </View>
+
+          {/* Direnç Seviyesi - Master prompt: Slider */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.fieldLabel}>Direnç Seviyesi</Text>
+            <Text style={styles.fieldDescription}>
+              Ne kadar direnç gösterebildin?
+            </Text>
+            
+            <Controller
+              control={control}
+              name="resistanceLevel"
+              render={({ field: { onChange, value } }) => (
+                <View style={styles.sliderContainer}>
+                  <Slider
+                    value={value}
+                    onValueChange={(newValue) => {
+                      triggerHapticFeedback('light');
+                      onChange(newValue);
+                    }}
+                    minimumValue={1}
+                    maximumValue={10}
+                    step={1}
+                    thumbStyle={styles.sliderThumb}
+                    trackStyle={styles.sliderTrack}
+                    minimumTrackTintColor="#10B981"
+                    maximumTrackTintColor="#E5E7EB"
+                  />
+                  <View style={styles.sliderLabels}>
+                    <Text style={styles.sliderLabelText}>1</Text>
+                    <Text style={styles.sliderValueText}>{value}/10</Text>
+                    <Text style={styles.sliderLabelText}>10</Text>
+                  </View>
+                  <Text style={styles.sliderHelperText}>
+                    {value <= 3 ? 'Çok zor oldu' : 
+                     value <= 6 ? 'Biraz direndim' : 
+                     value <= 8 ? 'İyi dayandım' : 
+                     'Harika kontrol!'}
+                  </Text>
+                </View>
+              )}
+            />
+          </View>
+
+          {/* Süre - Master prompt: Stepper (simplified as input with +/- buttons) */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.fieldLabel}>Süre (Dakika)</Text>
+            
+            <Controller
+              control={control}
+              name="duration"
+              render={({ field: { onChange, value } }) => (
+                <View style={styles.stepperContainer}>
+                  <Button
+                    mode="outlined"
+                    onPress={() => {
+                      triggerHapticFeedback('light');
+                      onChange(Math.max(1, value - 1));
+                    }}
+                    style={styles.stepperButton}
+                    icon="minus"
+                    disabled={value <= 1}
+                  />
+                  
+                  <View style={styles.stepperValue}>
+                    <Text style={styles.stepperValueText}>{value}</Text>
+                    <Text style={styles.stepperUnit}>dk</Text>
+                  </View>
+                  
+                  <Button
+                    mode="outlined"
+                    onPress={() => {
+                      triggerHapticFeedback('light');
+                      onChange(Math.min(300, value + 1));
+                    }}
+                    style={styles.stepperButton}
+                    icon="plus"
+                    disabled={value >= 300}
+                  />
+                </View>
+              )}
+            />
+            
+            {errors.duration && (
+              <Text style={styles.errorText}>{errors.duration.message}</Text>
+            )}
+          </View>
+
+          {/* Action Buttons - Master prompt: Empatik dil kullanımı */}
+          <View style={styles.actionContainer}>
+            <Button
+              mode="outlined"
+              onPress={handleCancel}
+              style={styles.cancelButton}
+              textColor="#6B7280"
+              disabled={loading}
+            >
+              İptal
+            </Button>
             
             <Button
               mode="contained"
-              onPress={handleSave}
-              loading={loading}
-              style={styles.button}
+              onPress={handleSubmit(onSubmit)}
+              style={styles.saveButton}
               buttonColor="#10B981"
+              loading={loading}
+              disabled={loading}
+              icon="check"
             >
               Kaydet
             </Button>
           </View>
         </Card.Content>
       </Card>
-    </ScrollView>
+    </View>
   );
 }
 
+// Master prompt: Sakinlik ve güven inşa eden stil sistemi
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#F9FAFB',
-  },
-  card: {
-    elevation: 2,
-    borderRadius: 12,
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: 24,
-    color: '#1F2937',
-    fontWeight: 'bold',
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    marginBottom: 12,
-    color: '#1F2937',
-    fontWeight: '600',
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  picker: {
-    height: 50,
-  },
-  categoryInfo: {
-    borderLeftWidth: 4,
-    paddingLeft: 12,
-    paddingVertical: 8,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 4,
-  },
-  categoryDescription: {
-    color: '#6B7280',
-    fontStyle: 'italic',
-  },
-  levelLabel: {
-    marginBottom: 8,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  slider: {
-    height: 40,
-    marginVertical: 8,
-  },
-  sliderThumb: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-  },
-  input: {
     backgroundColor: '#FFFFFF',
   },
-  moodContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  header: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    backgroundColor: '#F9FAFB',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  moodBadge: {
-    marginRight: 8,
+  title: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#111827',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  formCard: {
+    margin: 16,
+    borderRadius: 12,
+    elevation: 2,
+    backgroundColor: '#FFFFFF',
+  },
+  cardContent: {
+    padding: 20,
+  },
+  fieldContainer: {
+    marginBottom: 24,
+  },
+  fieldLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
     marginBottom: 8,
   },
-  triggersContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  fieldDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 12,
   },
-  triggerBadge: {
-    marginRight: 8,
+  segmentedButtons: {
     marginBottom: 8,
   },
-  switchRow: {
+  errorText: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
+  },
+  sliderContainer: {
+    paddingVertical: 8,
+  },
+  sliderThumb: {
+    backgroundColor: '#10B981',
+    width: 24,
+    height: 24,
+  },
+  sliderTrack: {
+    height: 6,
+    borderRadius: 3,
+  },
+  sliderLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 8,
+    marginTop: 8,
   },
-  buttonRow: {
+  sliderLabelText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  sliderValueText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  sliderHelperText: {
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  stepperContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  stepperButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderColor: '#D1D5DB',
+  },
+  stepperValue: {
+    alignItems: 'center',
+    minWidth: 80,
+  },
+  stepperValueText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  stepperUnit: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  actionContainer: {
+    flexDirection: 'row',
     gap: 12,
-    marginTop: 24,
+    marginTop: 32,
   },
-  button: {
+  cancelButton: {
     flex: 1,
+    borderColor: '#D1D5DB',
   },
-}); 
+  saveButton: {
+    flex: 2,
+    borderRadius: 8,
+  },
+});
