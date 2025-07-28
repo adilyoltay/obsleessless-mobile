@@ -94,11 +94,19 @@ export function CompulsionQuickEntry({ onSave, onCancel }: Props) {
         userId: user?.uid
       };
 
-      // AsyncStorage'a kaydet
-      const existingEntries = await AsyncStorage.getItem('compulsion_entries');
+      // AsyncStorage'a kaydet - Master prompt: Veri persistence
+      const existingEntries = await AsyncStorage.getItem('compulsion_logs');
       const entries = existingEntries ? JSON.parse(existingEntries) : [];
       entries.push(entry);
-      await AsyncStorage.setItem('compulsion_entries', JSON.stringify(entries));
+      await AsyncStorage.setItem('compulsion_logs', JSON.stringify(entries));
+
+      // Achievement tracking için
+      const achievementService = (await import('@/services/achievementService')).default;
+      await achievementService.trackActivity('compulsion', {
+        type: data.type,
+        resistance: data.resistanceLevel,
+        duration: data.duration
+      });
 
       // Master prompt: Başarı haptic'i tetikle
       triggerHapticFeedback('success');

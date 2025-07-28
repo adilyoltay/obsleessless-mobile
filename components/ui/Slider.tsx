@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet, PanGestureHandler, Animated } from 'react-native';
 
 interface SliderProps {
   value: number;
@@ -7,9 +7,10 @@ interface SliderProps {
   minimumValue?: number;
   maximumValue?: number;
   step?: number;
+  thumbStyle?: any;
+  trackStyle?: any;
   minimumTrackTintColor?: string;
   maximumTrackTintColor?: string;
-  thumbTintColor?: string;
   style?: any;
 }
 
@@ -17,46 +18,65 @@ export function Slider({
   value,
   onValueChange,
   minimumValue = 0,
-  maximumValue = 100,
+  maximumValue = 10,
   step = 1,
+  thumbStyle,
+  trackStyle,
   minimumTrackTintColor = '#10B981',
   maximumTrackTintColor = '#E5E7EB',
-  thumbTintColor = '#10B981',
   style,
 }: SliderProps) {
-  // Expo Go için basit slider implementasyonu
-  const percentage = ((value - minimumValue) / (maximumValue - minimumValue)) * 100;
+  const [sliderWidth, setSliderWidth] = React.useState(0);
+  const position = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    if (sliderWidth > 0) {
+      const percentage = (value - minimumValue) / (maximumValue - minimumValue);
+      const newPosition = percentage * (sliderWidth - 24);
+      position.setValue(newPosition);
+    }
+  }, [value, sliderWidth, minimumValue, maximumValue]);
+
+  const handleSliderLayout = (event: any) => {
+    setSliderWidth(event.nativeEvent.layout.width);
+  };
+
+  const handlePanGestureEvent = (event: any) => {
+    const { x } = event.nativeEvent;
+    const percentage = Math.max(0, Math.min(1, x / (sliderWidth - 24)));
+    const newValue = minimumValue + percentage * (maximumValue - minimumValue);
+    const steppedValue = Math.round(newValue / step) * step;
+    onValueChange(steppedValue);
+  };
+
+  const percentage = sliderWidth > 0 ? (value - minimumValue) / (maximumValue - minimumValue) : 0;
 
   return (
     <View style={[styles.container, style]}>
-      <View style={styles.track}>
+      <View 
+        style={[styles.track, trackStyle, { backgroundColor: maximumTrackTintColor }]}
+        onLayout={handleSliderLayout}
+      >
         <View 
           style={[
-            styles.minimumTrack, 
+            styles.activeTrack, 
             { 
-              width: `${percentage}%`,
+              width: `${percentage * 100}%`,
               backgroundColor: minimumTrackTintColor 
             }
           ]} 
         />
-        <View 
+        <Animated.View
           style={[
-            styles.maximumTrack,
-            { backgroundColor: maximumTrackTintColor }
-          ]} 
-        />
-        <View 
-          style={[
-            styles.thumb, 
-            { 
-              left: `${percentage}%`,
-              backgroundColor: thumbTintColor 
+            styles.thumb,
+            thumbStyle,
+            {
+              left: percentage * (sliderWidth - 24),
+              backgroundColor: minimumTrackTintColor,
             }
-          ]} 
+          ]}
+          onTouchEnd={handlePanGestureEvent}
         />
-      </View>
-      <View style={styles.valueContainer}>
-        <Text style={styles.valueText}>{Math.round(value)}</Text>
       </View>
     </View>
   );
@@ -64,38 +84,28 @@ export function Slider({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 8,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    height: 40,
+    justifyContent: 'center',
   },
   track: {
-    height: 4,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 2,
+    height: 6,
+    borderRadius: 3,
     position: 'relative',
-    width: '100%',
   },
-  minimumTrack: {
-    height: 4,
-    borderRadius: 2,
+  activeTrack: {
+    height: 6,
+    borderRadius: 3,
     position: 'absolute',
-    left: 0,
-    top: 0,
-  },
-  maximumTrack: {
-    height: 4,
-    borderRadius: 2,
-    position: 'absolute',
-    right: 0,
     top: 0,
     left: 0,
   },
   thumb: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     position: 'absolute',
-    top: -8,
-    marginLeft: -10,
+    top: -9,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -104,14 +114,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-  },
-  valueContainer: {
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  valueText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
   },
 });

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Card, Title, Button, SegmentedButtons, FAB } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenLayout from '@/components/layout/ScreenLayout';
@@ -101,7 +101,10 @@ export default function TrackingScreen() {
         {/* Master Prompt: BottomSheet for Yolculuk #3 */}
         {showQuickEntry && (
           <View style={styles.bottomSheetOverlay}>
-            <View style={styles.bottomSheetBackdrop} />
+            <Pressable 
+              style={styles.bottomSheetBackdrop}
+              onPress={() => setShowQuickEntry(false)}
+            />
             <View style={styles.bottomSheetContent}>
               <View style={styles.bottomSheetHandle} />
               <CompulsionQuickEntry

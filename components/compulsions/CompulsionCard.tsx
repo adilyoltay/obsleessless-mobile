@@ -1,359 +1,244 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Text, Card, Chip, Icon } from 'react-native-paper';
-import { CompulsionEntry } from '@/types/compulsion';
-import { useLanguage } from '@/contexts/LanguageContext';
-import {
-  getCompulsionCategory,
-  getIntensityLevel,
-  getResistanceLevel,
-  getMoodLevel
-} from '@/constants/compulsions';
+import { View, StyleSheet } from 'react-native';
+import { Text, Card, Chip, IconButton, Surface } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { COMPULSION_TYPES, getResistanceLevel } from '@/constants/compulsions';
+
+interface CompulsionEntry {
+  id: string;
+  type: string;
+  resistanceLevel: number;
+  duration: number;
+  timestamp: string;
+  userId?: string;
+}
 
 interface Props {
   entry: CompulsionEntry;
-  onPress?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
-  compact?: boolean;
+  showActions?: boolean;
 }
 
-export function CompulsionCard({ entry, onPress, onEdit, onDelete, compact = false }: Props) {
-  const { language } = useLanguage();
-  
-  const category = getCompulsionCategory(entry.type);
-  const intensityLevel = getIntensityLevel(entry.intensity);
-  const resistanceLevel = getResistanceLevel(entry.resistanceLevel);
-  const mood = getMoodLevel(entry.mood || 'neutral');
-  
-  const formatTime = (date: Date) => {
-    return new Date(date).toLocaleTimeString('tr-TR', {
+export function CompulsionCard({ entry, onEdit, onDelete, showActions = true }: Props) {
+  const compulsionType = COMPULSION_TYPES.find(type => type.id === entry.type);
+  const resistanceInfo = getResistanceLevel(entry.resistanceLevel);
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 60) {
+      return `${diffMins} dk önce`;
+    } else if (diffHours < 24) {
+      return `${diffHours} saat önce`;
+    } else if (diffDays === 1) {
+      return 'Dün';
+    } else if (diffDays < 7) {
+      return `${diffDays} gün önce`;
+    } else {
+      return date.toLocaleDateString('tr-TR', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    }
+  };
+
+  const formatTime = (timestamp: string) => {
+    return new Date(timestamp).toLocaleTimeString('tr-TR', {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('tr-TR', {
-      day: 'numeric',
-      month: 'short'
-    });
+  const getResistanceColor = (level: number) => {
+    if (level >= 8) return '#10B981'; // Green - High resistance
+    if (level >= 6) return '#F59E0B'; // Orange - Medium resistance
+    if (level >= 4) return '#EF4444'; // Red - Low resistance
+    return '#6B7280'; // Gray - Very low resistance
   };
 
-  const getDurationText = () => {
-    if (!entry.duration) return '';
-    const minutes = entry.duration;
-    if (minutes < 60) return `${minutes}dk`;
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}s ${remainingMinutes}dk` : `${hours}s`;
+  const getDurationColor = (duration: number) => {
+    if (duration <= 5) return '#10B981'; // Green - Short duration
+    if (duration <= 15) return '#F59E0B'; // Orange - Medium duration
+    return '#EF4444'; // Red - Long duration
   };
 
   return (
-    <TouchableOpacity 
-      onPress={onPress}
-      disabled={!onPress}
-      style={styles.container}
-    >
-      <Card style={[styles.card, compact && styles.compactCard]}>
-        <Card.Content style={styles.content}>
-          {/* Header Row */}
-          <View style={styles.header}>
-            <View style={styles.categorySection}>
-              <View style={[styles.categoryIcon, { backgroundColor: category.color }]}>
-                <Text style={styles.categoryIconText}>{category.icon}</Text>
-              </View>
-              <View style={styles.categoryInfo}>
-                <Text variant="titleSmall" style={styles.categoryName}>
-                  {language === 'tr' ? category.name : category.nameEn}
-                </Text>
-                <Text variant="bodySmall" style={styles.timestamp}>
-                  {formatDate(entry.timestamp)} • {formatTime(entry.timestamp)}
-                </Text>
-              </View>
+    <Card style={styles.card} mode="elevated">
+      <Card.Content style={styles.content}>
+        {/* Header Row */}
+        <View style={styles.headerRow}>
+          <View style={styles.typeContainer}>
+            <Surface style={[styles.iconContainer, { backgroundColor: compulsionType?.color + '20' || '#F3F4F6' }]}>
+              <Text style={styles.typeIcon}>{compulsionType?.icon || '🔄'}</Text>
+            </Surface>
+            <View style={styles.typeInfo}>
+              <Text style={styles.typeName}>{compulsionType?.title || 'Bilinmeyen'}</Text>
+              <Text style={styles.timestamp}>{formatTimestamp(entry.timestamp)}</Text>
             </View>
-            
-            {/* Action Buttons */}
-            {(onEdit || onDelete) && (
-              <View style={styles.actions}>
-                {onEdit && (
-                  <TouchableOpacity onPress={onEdit} style={styles.actionButton}>
-                    <Icon source="pencil" size={16} color="#6B7280" />
-                  </TouchableOpacity>
-                )}
-                {onDelete && (
-                  <TouchableOpacity onPress={onDelete} style={styles.actionButton}>
-                    <Icon source="delete" size={16} color="#EF4444" />
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
           </View>
 
-          {/* Metrics Row */}
-          <View style={styles.metricsRow}>
-            <View style={styles.metric}>
-              <Text variant="bodySmall" style={styles.metricLabel}>Şiddet</Text>
-              <View style={styles.metricValue}>
-                <View style={[styles.levelBar, { backgroundColor: intensityLevel.color }]}>
-                  <View 
-                    style={[styles.levelFill, { 
-                      width: `${(entry.intensity / 10) * 100}%`,
-                      backgroundColor: intensityLevel.color 
-                    }]} 
-                  />
-                </View>
-                <Text variant="bodySmall" style={[styles.levelText, { color: intensityLevel.color }]}>
-                  {entry.intensity}/10
-                </Text>
-              </View>
-            </View>
+          <View style={styles.timeContainer}>
+            <Text style={styles.timeText}>{formatTime(entry.timestamp)}</Text>
+          </View>
+        </View>
 
-            <View style={styles.metric}>
-              <Text variant="bodySmall" style={styles.metricLabel}>Direnç</Text>
-              <View style={styles.metricValue}>
-                <View style={[styles.levelBar, { backgroundColor: resistanceLevel.color }]}>
-                  <View 
-                    style={[styles.levelFill, { 
-                      width: `${(entry.resistanceLevel / 10) * 100}%`,
-                      backgroundColor: resistanceLevel.color 
-                    }]} 
-                  />
-                </View>
-                <Text variant="bodySmall" style={[styles.levelText, { color: resistanceLevel.color }]}>
-                  {entry.resistanceLevel}/10
-                </Text>
-              </View>
-            </View>
-
-            {entry.duration && (
-              <View style={styles.metric}>
-                <Text variant="bodySmall" style={styles.metricLabel}>Süre</Text>
-                <Text variant="bodySmall" style={styles.durationText}>
-                  {getDurationText()}
-                </Text>
-              </View>
-            )}
+        {/* Metrics Row */}
+        <View style={styles.metricsRow}>
+          {/* Resistance Level */}
+          <View style={styles.metricContainer}>
+            <Surface style={[styles.metricChip, { backgroundColor: getResistanceColor(entry.resistanceLevel) + '20' }]}>
+              <MaterialCommunityIcons 
+                name="shield-outline" 
+                size={16} 
+                color={getResistanceColor(entry.resistanceLevel)} 
+              />
+              <Text style={[styles.metricText, { color: getResistanceColor(entry.resistanceLevel) }]}>
+                Direnç {entry.resistanceLevel}/10
+              </Text>
+            </Surface>
+            <Text style={styles.metricLabel}>{resistanceInfo.description}</Text>
           </View>
 
-          {/* Details Row */}
-          {!compact && (
-            <View style={styles.detailsRow}>
-              {/* Mood */}
-              <Chip 
-                mode="outlined" 
-                compact 
-                style={[styles.chip, { borderColor: mood.color }]}
-                textStyle={{ color: mood.color, fontSize: 11 }}
-              >
-                {mood.emoji} {language === 'tr' ? mood.label : mood.labelEn}
-              </Chip>
-
-              {/* Completion Status */}
-              <Chip 
-                mode="outlined" 
-                compact 
-                style={[styles.chip, { 
-                  borderColor: entry.completed ? '#10B981' : '#F59E0B',
-                  backgroundColor: entry.completed ? '#ECFDF5' : '#FEF3C7'
-                }]}
-                textStyle={{ 
-                  color: entry.completed ? '#065F46' : '#92400E', 
-                  fontSize: 11 
-                }}
-              >
-                {entry.completed ? '✓ Tamamlandı' : '⏸ Durduruldu'}
-              </Chip>
-
-              {/* Help Used */}
-              {entry.helpUsed && (
-                <Chip 
-                  mode="outlined" 
-                  compact 
-                  style={[styles.chip, { 
-                    borderColor: '#8B5CF6',
-                    backgroundColor: '#F3E8FF'
-                  }]}
-                  textStyle={{ color: '#5B21B6', fontSize: 11 }}
-                >
-                  🛡 Yardım
-                </Chip>
-              )}
-            </View>
-          )}
-
-          {/* Triggers */}
-          {!compact && entry.triggers && entry.triggers.length > 0 && (
-            <View style={styles.triggersRow}>
-              <Text variant="bodySmall" style={styles.triggersLabel}>
-                Tetikleyiciler:
+          {/* Duration */}
+          <View style={styles.metricContainer}>
+            <Surface style={[styles.metricChip, { backgroundColor: getDurationColor(entry.duration) + '20' }]}>
+              <MaterialCommunityIcons 
+                name="clock-outline" 
+                size={16} 
+                color={getDurationColor(entry.duration)} 
+              />
+              <Text style={[styles.metricText, { color: getDurationColor(entry.duration) }]}>
+                {entry.duration} dk
               </Text>
-              <View style={styles.triggersContainer}>
-                {entry.triggers.slice(0, 3).map((trigger, index) => (
-                  <Chip 
-                    key={index}
-                    mode="outlined" 
-                    compact 
-                    style={styles.triggerChip}
-                    textStyle={{ fontSize: 10 }}
-                  >
-                    {trigger}
-                  </Chip>
-                ))}
-                {entry.triggers.length > 3 && (
-                  <Text variant="bodySmall" style={styles.moreText}>
-                    +{entry.triggers.length - 3} daha
-                  </Text>
-                )}
-              </View>
-            </View>
-          )}
+            </Surface>
+            <Text style={styles.metricLabel}>
+              {entry.duration <= 5 ? 'Kısa süre' : 
+               entry.duration <= 15 ? 'Orta süre' : 'Uzun süre'}
+            </Text>
+          </View>
+        </View>
 
-          {/* Notes */}
-          {!compact && entry.notes && (
-            <View style={styles.notesRow}>
-              <Text variant="bodySmall" style={styles.notesText} numberOfLines={2}>
-                💭 {entry.notes}
-              </Text>
-            </View>
-          )}
-        </Card.Content>
-      </Card>
-    </TouchableOpacity>
-      );
+        {/* Action Buttons */}
+        {showActions && (
+          <View style={styles.actionRow}>
+            <IconButton
+              icon="pencil-outline"
+              size={20}
+              onPress={onEdit}
+              style={styles.actionButton}
+              iconColor="#6B7280"
+            />
+            <IconButton
+              icon="delete-outline"
+              size={20}
+              onPress={onDelete}
+              style={styles.actionButton}
+              iconColor="#EF4444"
+            />
+          </View>
+        )}
+      </Card.Content>
+    </Card>
+  );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: 12,
-  },
   card: {
-    elevation: 2,
-    borderRadius: 12,
+    marginBottom: 12,
     backgroundColor: '#FFFFFF',
-  },
-  compactCard: {
-    elevation: 1,
+    borderRadius: 12,
+    elevation: 2,
   },
   content: {
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
   },
-  header: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  categorySection: {
+  typeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  categoryIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  categoryIconText: {
-    fontSize: 18,
+  typeIcon: {
+    fontSize: 20,
   },
-  categoryInfo: {
+  typeInfo: {
     flex: 1,
   },
-  categoryName: {
+  typeName: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#1F2937',
     marginBottom: 2,
   },
   timestamp: {
+    fontSize: 12,
     color: '#6B7280',
   },
-  actions: {
-    flexDirection: 'row',
-    gap: 8,
+  timeContainer: {
+    alignItems: 'flex-end',
   },
-  actionButton: {
-    padding: 4,
+  timeText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
   },
   metricsRow: {
     flexDirection: 'row',
     gap: 16,
     marginBottom: 12,
   },
-  metric: {
+  metricContainer: {
     flex: 1,
+  },
+  metricChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 6,
+    marginBottom: 4,
+  },
+  metricText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   metricLabel: {
-    color: '#6B7280',
-    marginBottom: 4,
-    fontSize: 11,
-  },
-  metricValue: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  levelBar: {
-    height: 4,
-    flex: 1,
-    borderRadius: 2,
-    backgroundColor: '#E5E7EB',
-  },
-  levelFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  levelText: {
-    fontSize: 11,
-    fontWeight: '600',
-    minWidth: 30,
-  },
-  durationText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  detailsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 8,
-  },
-  chip: {
-    height: 24,
-  },
-  triggersRow: {
-    marginBottom: 8,
-  },
-  triggersLabel: {
-    color: '#6B7280',
-    marginBottom: 4,
-    fontSize: 11,
-  },
-  triggersContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    alignItems: 'center',
-  },
-  triggerChip: {
-    height: 20,
-    backgroundColor: '#F9FAFB',
-  },
-  moreText: {
-    color: '#6B7280',
     fontSize: 10,
-    fontStyle: 'italic',
+    color: '#9CA3AF',
+    textAlign: 'center',
   },
-  notesRow: {
-    marginTop: 4,
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
   },
-  notesText: {
-    color: '#374151',
-    fontStyle: 'italic',
-    lineHeight: 16,
+  actionButton: {
+    margin: 0,
   },
 });
