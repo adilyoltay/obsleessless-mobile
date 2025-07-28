@@ -1,443 +1,199 @@
 
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
   ScrollView,
-  TouchableOpacity,
-  Dimensions,
+  Pressable
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, Typography } from '@/constants/Colors';
-import { useTranslation } from '@/hooks/useTranslation';
-import { ScreenLayout } from '@/components/layout/ScreenLayout';
-import YBOCSAssessment from '@/components/assessment/YBOCSAssessment';
-
-const { width } = Dimensions.get('window');
 
 export default function AssessmentScreen() {
-  const { t } = useTranslation();
-  const [activeSection, setActiveSection] = useState<'overview' | 'ybocs' | 'progress'>('overview');
+  const [selectedSection, setSelectedSection] = useState<string>('ybocs');
 
-  const SectionCard = ({ 
-    title, 
-    description, 
-    icon, 
-    color, 
-    onPress,
-    isActive = false
-  }: {
-    title: string;
-    description: string;
-    icon: string;
-    color: string;
-    onPress: () => void;
-    isActive?: boolean;
-  }) => (
-    <TouchableOpacity
-      style={[styles.sectionCard, isActive && { borderColor: color, borderWidth: 2 }]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <LinearGradient
-        colors={[color + '10', color + '05']}
-        style={styles.sectionCardGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-      <View style={[styles.sectionIconContainer, { backgroundColor: color + '20' }]}>
-        <MaterialCommunityIcons name={icon as any} size={28} color={color} />
-      </View>
-      <View style={styles.sectionContent}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        <Text style={styles.sectionDescription}>{description}</Text>
-      </View>
-      <MaterialCommunityIcons 
-        name="chevron-right" 
-        size={20} 
-        color={isActive ? color : Colors.light.icon} 
-      />
-    </TouchableOpacity>
-  );
-
-  const ScoreCard = ({ 
-    label, 
-    score, 
-    maxScore, 
-    color,
-    trend 
-  }: {
-    label: string;
-    score: number;
-    maxScore: number;
-    color: string;
-    trend?: 'up' | 'down' | 'stable';
-  }) => {
-    const percentage = (score / maxScore) * 100;
-    
-    return (
-      <View style={styles.scoreCard}>
-        <View style={styles.scoreHeader}>
-          <Text style={styles.scoreLabel}>{label}</Text>
-          {trend && (
-            <MaterialCommunityIcons 
-              name={trend === 'up' ? 'trending-up' : trend === 'down' ? 'trending-down' : 'trending-neutral'} 
-              size={16} 
-              color={trend === 'up' ? Colors.light.error : trend === 'down' ? Colors.light.success : Colors.light.icon} 
-            />
-          )}
-        </View>
-        
-        <View style={styles.scoreContent}>
-          <Text style={[styles.scoreValue, { color }]}>{score}</Text>
-          <Text style={styles.scoreMaxValue}>/{maxScore}</Text>
-        </View>
-        
-        <View style={styles.progressBar}>
-          <View 
-            style={[
-              styles.progressFill, 
-              { width: `${percentage}%`, backgroundColor: color }
-            ]} 
-          />
-        </View>
-        
-        <Text style={styles.scorePercentage}>{percentage.toFixed(0)}%</Text>
-      </View>
-    );
-  };
-
-  const renderContent = () => {
-    switch (activeSection) {
-      case 'overview':
-        return (
-          <View style={styles.overviewContent}>
-            <Text style={styles.contentTitle}>{t('assessment.currentScores')}</Text>
-            <Text style={styles.contentSubtitle}>
-              {t('assessment.lastUpdated')}: 2 gün önce
-            </Text>
-            
-            <View style={styles.scoresGrid}>
-              <ScoreCard
-                label={t('assessment.obsessions')}
-                score={12}
-                maxScore={20}
-                color={Colors.light.error}
-                trend="down"
-              />
-              <ScoreCard
-                label={t('assessment.compulsions')}
-                score={14}
-                maxScore={20}
-                color={Colors.light.warning}
-                trend="down"
-              />
-              <ScoreCard
-                label={t('assessment.totalScore')}
-                score={26}
-                maxScore={40}
-                color={Colors.light.info}
-                trend="stable"
-              />
-            </View>
-
-            <View style={styles.insightCard}>
-              <MaterialCommunityIcons 
-                name="lightbulb-on" 
-                size={24} 
-                color={Colors.light.success} 
-              />
-              <View style={styles.insightContent}>
-                <Text style={styles.insightTitle}>{t('assessment.insight')}</Text>
-                <Text style={styles.insightText}>
-                  {t('assessment.improvementNotice')}
-                </Text>
-              </View>
-            </View>
-          </View>
-        );
-      
-      case 'ybocs':
-        return (
-          <View style={styles.assessmentContent}>
-            <YBOCSAssessment />
-          </View>
-        );
-      
-      case 'progress':
-        return (
-          <View style={styles.progressContent}>
-            <Text style={styles.contentTitle}>{t('assessment.progressOverTime')}</Text>
-            <Text style={styles.contentSubtitle}>
-              {t('assessment.trackingProgress')}
-            </Text>
-            
-            {/* Placeholder for progress charts */}
-            <View style={styles.chartPlaceholder}>
-              <MaterialCommunityIcons 
-                name="chart-line" 
-                size={48} 
-                color={Colors.light.icon} 
-              />
-              <Text style={styles.chartPlaceholderText}>
-                {t('assessment.chartComingSoon')}
-              </Text>
-            </View>
-          </View>
-        );
-      
-      default:
-        return null;
+  const assessmentSections = [
+    {
+      id: 'ybocs',
+      title: 'Y-BOCS Değerlendirmesi',
+      description: 'Yale-Brown Obsesif Kompulsif Ölçeği',
+      icon: 'clipboard-check',
+      color: '#10B981'
+    },
+    {
+      id: 'history',
+      title: 'Geçmiş Değerlendirmeler',
+      description: 'Önceki test sonuçlarını görüntüle',
+      icon: 'history',
+      color: '#3B82F6'
     }
-  };
+  ];
 
   return (
-    <ScreenLayout scrollable={false} backgroundColor={Colors.light.backgroundSecondary}>
-      {/* Header */}
-      <LinearGradient
-        colors={[Colors.light.info, '#2563eb']}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.headerTitle}>{t('assessment.title')}</Text>
-            <Text style={styles.headerSubtitle}>{t('assessment.subtitle')}</Text>
-          </View>
-          <View style={styles.headerIcon}>
-            <MaterialCommunityIcons name="clipboard-text" size={32} color="white" />
-          </View>
+    <View style={styles.container}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Değerlendirme</Text>
+          <Text style={styles.headerSubtitle}>
+            OKB semptomlarını değerlendir ve ilerlemeni takip et
+          </Text>
         </View>
-      </LinearGradient>
 
-      {/* Section Navigation */}
-      <View style={styles.navigationSection}>
-        <SectionCard
-          title={t('assessment.overview')}
-          description={t('assessment.viewCurrentScores')}
-          icon="chart-donut"
-          color={Colors.light.info}
-          onPress={() => setActiveSection('overview')}
-          isActive={activeSection === 'overview'}
-        />
-        <SectionCard
-          title={t('assessment.ybocs')}
-          description={t('assessment.takeAssessment')}
-          icon="clipboard-check"
-          color={Colors.light.tint}
-          onPress={() => setActiveSection('ybocs')}
-          isActive={activeSection === 'ybocs'}
-        />
-        <SectionCard
-          title={t('assessment.progress')}
-          description={t('assessment.viewTrends')}
-          icon="trending-up"
-          color={Colors.light.success}
-          onPress={() => setActiveSection('progress')}
-          isActive={activeSection === 'progress'}
-        />
-      </View>
+        {/* Assessment Sections */}
+        <View style={styles.sectionsContainer}>
+          {assessmentSections.map((section) => (
+            <Pressable
+              key={section.id}
+              style={[
+                styles.sectionCard,
+                selectedSection === section.id && styles.sectionCardActive
+              ]}
+              onPress={() => setSelectedSection(section.id)}
+            >
+              <View style={[styles.sectionIcon, { backgroundColor: `${section.color}20` }]}>
+                <MaterialCommunityIcons 
+                  name={section.icon as any} 
+                  size={32} 
+                  color={section.color} 
+                />
+              </View>
+              <View style={styles.sectionContent}>
+                <Text style={styles.sectionTitle}>{section.title}</Text>
+                <Text style={styles.sectionDescription}>{section.description}</Text>
+              </View>
+              <MaterialCommunityIcons 
+                name="chevron-right" 
+                size={20} 
+                color="#6B7280" 
+              />
+            </Pressable>
+          ))}
+        </View>
 
-      {/* Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {renderContent()}
+        {/* Content Area */}
+        <View style={styles.contentArea}>
+          {selectedSection === 'ybocs' ? (
+            <View style={styles.comingSoonContainer}>
+              <MaterialCommunityIcons name="wrench" size={64} color="#F59E0B" />
+              <Text style={styles.comingSoonTitle}>Y-BOCS Değerlendirmesi</Text>
+              <Text style={styles.comingSoonText}>
+                Yale-Brown Obsesif Kompulsif Ölçeği yakında eklenecek.
+                Bu özellik üzerinde çalışıyoruz!
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.comingSoonContainer}>
+              <MaterialCommunityIcons name="history" size={64} color="#3B82F6" />
+              <Text style={styles.comingSoonTitle}>Geçmiş Değerlendirmeler</Text>
+              <Text style={styles.comingSoonText}>
+                Önceki test sonuçlarınız burada görünecek.
+              </Text>
+            </View>
+          )}
+        </View>
       </ScrollView>
-    </ScreenLayout>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    marginHorizontal: -Spacing.md,
-    marginTop: -Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xl,
-    borderBottomLeftRadius: BorderRadius.xl,
-    borderBottomRightRadius: BorderRadius.xl,
+  container: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
   },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  scrollView: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   headerTitle: {
-    fontSize: Typography.fontSize.xxl,
-    fontWeight: Typography.fontWeight.bold,
-    color: 'white',
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#111827',
+    fontFamily: 'Inter',
   },
   headerSubtitle: {
-    fontSize: Typography.fontSize.md,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginTop: Spacing.xs,
+    fontSize: 15,
+    color: '#6B7280',
+    marginTop: 4,
+    fontFamily: 'Inter',
   },
-  headerIcon: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: BorderRadius.full,
-    padding: Spacing.md,
-  },
-  navigationSection: {
-    padding: Spacing.md,
-    gap: Spacing.sm,
+  sectionsContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   sectionCard: {
-    backgroundColor: Colors.light.card,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    position: 'relative',
-    overflow: 'hidden',
+    shadowRadius: 2,
+    elevation: 1,
   },
-  sectionCardGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+  sectionCardActive: {
+    borderWidth: 2,
+    borderColor: '#10B981',
   },
-  sectionIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.md,
-    justifyContent: 'center',
+  sectionIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
   },
   sectionContent: {
     flex: 1,
-    marginLeft: Spacing.md,
   },
   sectionTitle: {
-    fontSize: Typography.fontSize.md,
-    fontWeight: Typography.fontWeight.semibold,
-    color: Colors.light.text,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    fontFamily: 'Inter',
   },
   sectionDescription: {
-    fontSize: Typography.fontSize.sm,
-    color: Colors.light.icon,
-    marginTop: Spacing.xs,
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 4,
+    fontFamily: 'Inter',
   },
-  content: {
-    flex: 1,
+  contentArea: {
+    paddingHorizontal: 16,
+    paddingBottom: 32,
   },
-  overviewContent: {
-    padding: Spacing.md,
-  },
-  assessmentContent: {
-    padding: Spacing.md,
-  },
-  progressContent: {
-    padding: Spacing.md,
-  },
-  contentTitle: {
-    fontSize: Typography.fontSize.xl,
-    fontWeight: Typography.fontWeight.semibold,
-    color: Colors.light.text,
-  },
-  contentSubtitle: {
-    fontSize: Typography.fontSize.md,
-    color: Colors.light.icon,
-    marginTop: Spacing.xs,
-    marginBottom: Spacing.xl,
-  },
-  scoresGrid: {
-    gap: Spacing.md,
-    marginBottom: Spacing.xl,
-  },
-  scoreCard: {
-    backgroundColor: Colors.light.card,
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
+  comingSoonContainer: {
+    backgroundColor: '#FFFFFF',
+    padding: 32,
+    borderRadius: 12,
+    alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  scoreHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.sm,
+  comingSoonTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#111827',
+    marginTop: 16,
+    marginBottom: 8,
+    fontFamily: 'Inter',
   },
-  scoreLabel: {
-    fontSize: Typography.fontSize.md,
-    fontWeight: Typography.fontWeight.medium,
-    color: Colors.light.text,
-  },
-  scoreContent: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: Spacing.sm,
-  },
-  scoreValue: {
-    fontSize: Typography.fontSize.xxxl,
-    fontWeight: Typography.fontWeight.bold,
-  },
-  scoreMaxValue: {
-    fontSize: Typography.fontSize.lg,
-    color: Colors.light.icon,
-    marginLeft: Spacing.xs,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: Colors.light.accent,
-    borderRadius: BorderRadius.sm,
-    marginBottom: Spacing.sm,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: BorderRadius.sm,
-  },
-  scorePercentage: {
-    fontSize: Typography.fontSize.sm,
-    color: Colors.light.icon,
-    textAlign: 'right',
-  },
-  insightCard: {
-    backgroundColor: Colors.light.success + '10',
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.light.success,
-  },
-  insightContent: {
-    flex: 1,
-    marginLeft: Spacing.md,
-  },
-  insightTitle: {
-    fontSize: Typography.fontSize.md,
-    fontWeight: Typography.fontWeight.semibold,
-    color: Colors.light.text,
-    marginBottom: Spacing.xs,
-  },
-  insightText: {
-    fontSize: Typography.fontSize.sm,
-    color: Colors.light.icon,
-    lineHeight: 20,
-  },
-  chartPlaceholder: {
-    backgroundColor: Colors.light.card,
-    padding: Spacing.xxl,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: Spacing.lg,
-  },
-  chartPlaceholderText: {
-    fontSize: Typography.fontSize.md,
-    color: Colors.light.icon,
-    marginTop: Spacing.md,
+  comingSoonText: {
+    fontSize: 16,
+    color: '#6B7280',
     textAlign: 'center',
+    lineHeight: 24,
+    fontFamily: 'Inter',
   },
 });
