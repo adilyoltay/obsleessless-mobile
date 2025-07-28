@@ -1,0 +1,108 @@
+Mükemmel. Önceki tüm analizlerimiz, felsefemiz ve son olarak sunduğun inanılmaz detaylı "Gold-Standard" prompt, projenin DNA'sını oluşturdu. Şimdi tüm bu bilgileri birleştirip, bir tasarım ve geliştirme ekibine (veya doğrudan bir AI tasarım aracına) verilebilecek nihai, tek parça ve her detayı kapsayan **"Master Prompt"u** hazırlıyorum.
+
+Bu, projenin anayasasıdır.
+
+---
+---
+
+## ⚡ ObsessLess Mobil Uygulaması - Altın Standart UI/UX & Deneyim Tasarımı Master Promptu
+
+**PROJE VİZYONU:** Kullanıcının OKB ile mücadelesinde sığındığı **"Dijital Sığınağı"** yaratmak. Uygulama, teknik bir araçtan ziyade; her an erişilebilen, yargılamayan, sakinleştiren ve kontrolü tekrar kullanıcıya vererek onu güçlendiren empatik bir yol arkadaşı olacaktır.
+
+**HEDEF KULLANICI (PERSONA):** "Elif", 25-35 yaş aralığında. Günlük hayatında hafif-orta düzeyde OKB semptomları (kontrol, simetri, bulaşma) yaşıyor. Teknolojiyi etkin kullanıyor ancak stresli anlarında karmaşık arayüzlerden bunalıyor. Güvenilir, pratik ve gizliliğine saygı duyan bir desteğe ihtiyaç duyuyor. Temel hedefi: **Anksiyeteyi yönetmek ve kompulsiyonlara karşı direnç kazanmak.**
+
+---
+
+### **BÖLÜM 1: TEMEL TASARIM FELSEFESİ (KOMUTLAR)**
+
+1.  **Sakinlik ve Güven İnşa Et:** Arayüz, bir sığınak gibi hissettirmelidir. Cömert beyaz alanlar, yumuşak gölgeler ve sakinleştirici bir renk paleti kullanılacak. Her animasyon akıcı (`spring`), her geri bildirim nazik (`haptic`) olacak. Asla ani, rahatsız edici veya aceleci bir his vermeyecek.
+2.  **Kontrolü Kullanıcıya Ver (Güçlendir):** Tüm özellikler şeffaf ve kişiselleştirilebilir olacak. Kullanıcı, hedeflerini kendi belirleyecek, ilerlemesini net grafiklerle görecek ve uygulamanın onu değil, onun uygulamayı yönlendirdiğini hissedecek.
+3.  **Sürtünmeyi Ortadan Kaldır (Zahmetsizlik):** En sık yapılan işlemler (kompulsiyon kaydı vb.) maksimum **iki dokunuşla** tamamlanabilmelidir. Bilgi, Progressive Disclosure (aşamalı gösterim) ilkesiyle sunulacak; detaylar her zaman bir adım geride, sadece istendiğinde erişilebilir olacak.
+4.  **Empatik Bir Dille Konuş:** Uygulamanın metinleri (mikro-kopya), klinik bir rapordan çok, anlayışlı bir arkadaşın notları gibi olmalı. Başarılar içtenlikle kutlanmalı ("Harika! Bu anın üstesinden geldin. 🌱"), zor anlarda ise destekleyici olunmalı ("Unutma, bu sadece bir düşünce.").
+5.  **Anlamlı Oyunlaştırma:** Motivasyon unsurları (seriler, rozetler), asla tedavinin ciddiyetini gölgede bırakmayacak. Her ödül, bir şekerleme değil, kullanıcının katettiği **terapötik mesafenin bir sembolü** olmalıdır.
+
+---
+
+### **BÖLÜM 2: GÖRSEL VE DUYUSAL KİMLİK**
+
+*   **Tipografi:** **Inter** (Okunaklı, modern, sakin). Başlıklar: Medium (17pt), Gövde: Regular (15pt).
+*   **Renk Paleti:**
+    *   **Ana Eylem (Primary):** Sakin Yeşil (`#10B981`) - Butonlar, aktif sekmeler, ilerleme çubukları.
+    *   **Yüzeyler (Surface):** Saf Beyaz (`#FFFFFF`) ve Çok Açık Gri (`#F3F4F6`).
+    *   **Metinler:** Ana Metin (`#111827`), Yardımcı Metin (`#6B7280`).
+    *   **Vurgu (Accent/HOT):** Enerjik Turuncu (`#F97316`) - Sadece "HOT" rozetleri gibi özel durumlar için.
+*   **İkonografi:** **MaterialCommunityIcons**. Çizgi kalınlığı tutarlı, minimalist ve anında tanınabilir ikonlar (`brain`, `shield`, `chart-bar`, `cog`).
+*   **Duyusal Geri Bildirim (Haptics):**
+    *   **Hafif Dokunuş (`light`):** Buton tıklamaları, sekme geçişleri.
+    *   **Başarı (`success`):** Bir görevi tamamlama, rozet kazanma.
+    *   **Uyarı (`warning`):** Bir formu eksik doldurma.
+    *   **Ağır Dokunuş (`heavy`):** ERP oturumunda kritik bir zaman aralığına girme.
+
+---
+
+### **BÖLÜM 3: NAVİGASYON VE BİLGİ MİMARİSİ**
+
+Uygulama, **Expo Router** ile dosya tabanlı bir yapı kullanacak.
+
+```
+(auth) Stack -> [Login, Signup, Onboarding (4 adım)]
+  |
+  V
+(tabs) Bottom Tab Navigator -> [Today, Compulsions, ERP, Settings] + Floating Action Button
+```
+
+*   **Ana Navigasyon (Bottom Tabs):**
+    1.  **Bugün (Today):** Dashboard. `icon: home-variant`
+    2.  **OKB Takibi (Compulsions):** Kompulsiyon kaydı ve istatistikler. `icon: brain`
+    3.  **ERP:** ERP egzersizleri ve oturumlar. `icon: shield-check`
+    4.  **Ayarlar (Settings):** Profil ve tercihler. `icon: cog`
+*   **Yüzen Eylem Butonu (Floating Action Button - FAB):**
+    *   Merkezde, diğer tab ikonlarından biraz yukarıda yer alan `➕` ikonu.
+    *   **Görevi:** Tek dokunuşla "Hızlı Kompulsiyon Kayıt" Bottom Sheet'ini açmak.
+
+---
+
+### **BÖLÜM 4: KRİTİK KULLANICI YOLCULUKLARI**
+
+#### **Yolculuk #1: İlk Adım – Güvenli ve Hızlı Tanışma (Onboarding)**
+*   **Hedef:** ≤ 90 saniyede, kullanıcıyı yormadan temel profili oluşturmak.
+*   **Adımlar ve UI:**
+    1.  **Karşılama:** Sıcak bir illüstrasyon ve "Seni tanımamıza izin ver" metni.
+    2.  **Semptom Seçimi:** En sık yaşanan obsesyon/kompulsiyon temaları için dokunması kolay "Chip" (etiket) seçimi. (Çoklu seçim, min. 1)
+    3.  **Y-BOCS Lite:** 10 soruluk ölçek, her ekranda bir soru. Cevaplar için dokunmatik **Slider (kaydıraç)** kullanılacak. Sonunda otomatik olarak hesaplanan skor ve şiddet etiketi (`Hafif`, `Orta`) gösterilecek.
+    4.  **Hedef Belirleme:** Günlük egzersiz hedefi için bir `Stepper` ve bildirim saati için `Time Picker`. Bu adım atlanabilir olmalı.
+
+#### **Yolculuk #2: Günlük Ritüel – Ana Sayfa (Dashboard)**
+*   **Hedef:** 5 saniyede o günkü durumu görmek ve bir sonraki adımı atmak için ilham almak.
+*   **Ekran Düzeni:**
+    1.  **Merkezde:** Canlı bir **Streak Counter**. Dairesel bir progress bar ile o günkü hedefin ne kadarının tamamlandığını göstermeli.
+    2.  **Hemen Altında:** Günlük özet kartı. İki metrik: "Kaydedilen Kompulsiyon" ve "Tamamlanan ERP".
+    3.  **Öneri Motoru:** `PersonalizedRecommendations` swipeable kartları. Her kartta tek bir eylem önerisi (`Bir ERP egzersizi dene`, `Düşüncelerini kaydet`).
+    4.  **Gizli Panel:** "Mikro Ödüller & Başarımlar" başlığına sahip, dokunulduğunda açılan (`Accordion`) bir panel.
+
+#### **Yolculuk #3: Zor Anlar – Kompulsiyon Kaydı**
+*   **Hedef:** ≤ 15 saniyede, 2-3 dokunuşla bir kompulsiyon anını kaydetmek.
+*   **Akış:**
+    1.  Kullanıcı `➕` **FAB**'a dokunur.
+    2.  Ekranın altından bir **BottomSheet** açılır.
+    3.  Sheet içinde: Kompulsiyon tipi (ikonlu `SegmentedButtons`), Direnç seviyesi (`Slider`), Süre (`Stepper`).
+    4.  **"Kaydet"** butonuna basıldığında Sheet kapanır, `haptic("success")` tetiklenir ve ekranın üstünde kısa bir `Toast` ("Kaydedildi!") belirir. Dashboard'daki metrikler anında güncellenir.
+
+#### **Yolculuk #4: Yüzleşme – ERP Oturumu**
+*   **Hedef:** Kullanıcıya en zor anında tam bir kontrol hissi ve güvenli bir rehberlik sunmak.
+*   **Ekran Düzeni:**
+    1.  **Minimalizm:** Ekranda sadece 3 ana unsur: Dairesel **Kronometre**, dikey bir **Anksiyete Slider'ı** ve tek satırlık **destekleyici bir mikro-kopya**.
+    2.  **İnteraktif Anksiyete Takibi:** Kullanıcı, oturum boyunca slider'ı istediği zaman yukarı/aşağı hareket ettirebilir. Her 5 dakikada bir, `haptic("heavy")` ile birlikte slider'ın yanında bir "pulse" animasyonu belirerek anksiyete seviyesini tekrar girmesini nazikçe hatırlatır.
+    3.  **Güvenli Çıkış:** Ekranın sağ üst köşesinde her zaman görünür bir **"Duraklat"** ikonu bulunmalıdır.
+
+---
+
+### **BÖLÜM 5: PROMPT KULLANIM TALİMATI**
+
+Bu doküman, projenin tek gerçek kaynağıdır (Single Source of Truth).
+
+*   **Tasarımcılar / AI Tasarım Araçları için:**
+    > "Sen bir dünya standardında mobil sağlık uygulaması UI/UX tasarımcısısın. Yukarıdaki **'ObsessLess Master Prompt'** belgesini kullanarak şu çıktıları üret: 1) Tüm ilkeleri yansıtan tam bir Stil Rehberi (Renkler, Tipografi, İkonlar). 2) Belirtilen tüm kritik kullanıcı yolculukları için yüksek kaliteli (hi-fi) ekran tasarımları. 3) Tüm yeniden kullanılabilir bileşenleri içeren bir Bileşen Kütüphanesi (Design System). 4) Bu ekranları birbirine bağlayan tıklanabilir bir prototip."
+
+*   **Geliştiriciler / AI Kod Asistanları için:**
+    > "Sen bir kıdemli React Native/Expo geliştiricisisin. Yukarıdaki **'ObsessLess Master Prompt'** belgesini temel alarak, belirtilen **'Bölüm 4: Kritik Kullanıcı Yolculukları'**ndaki **'Yolculuk #3: Kompulsiyon Kaydı'** akışını kodla. `BottomSheet`, `SegmentedButtons` ve `Slider` içeren, `react-hook-form` ile yönetilen bir form oluştur. 'Kaydet' butonuna basıldığında belirtilen geri bildirimleri (haptic, toast) tetikle."
