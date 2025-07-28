@@ -1,361 +1,287 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
+import { 
+  Text, 
+  View, 
+  StyleSheet, 
+  ScrollView, 
+  RefreshControl,
   Dimensions,
-  Platform,
+  Alert 
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { Colors, Spacing, BorderRadius, Typography } from '@/constants/Colors';
-import { useCompulsions } from '@/hooks/useCompulsions';
-import { useTranslation } from '@/hooks/useTranslation';
-import StreakCounter from '@/components/gamification/StreakCounter';
-import { ScreenLayout } from '@/components/layout/ScreenLayout';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { ProgressBar } from '@/components/ui/ProgressBar';
+import { CompulsionSummary } from '@/components/compulsions/CompulsionSummary';
+import { StreakCounter } from '@/components/gamification/StreakCounter';
+import { AchievementSystem } from '@/components/gamification/AchievementSystem';
+import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
+import { CompulsionQuickEntry } from '@/components/forms/CompulsionQuickEntry';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import { CompulsionEntry } from '@/types/compulsion';
 
 const { width } = Dimensions.get('window');
 
-export default function DashboardScreen() {
-  const router = useRouter();
-  const { t } = useTranslation();
-  const { compulsions, todayStats, weeklyProgress } = useCompulsions();
-  const [greeting, setGreeting] = useState('');
+export default function HomeScreen() {
+  const [refreshing, setRefreshing] = useState(false);
+  const [showQuickEntry, setShowQuickEntry] = useState(false);
+  const [compulsions, setCompulsions] = useState<CompulsionEntry[]>([]);
+  const [dailyGoal, setDailyGoal] = useState(3);
+  const [todayEntries, setTodayEntries] = useState(0);
+
+  const loadData = async () => {
+    try {
+      // Load compulsions
+      const compulsionData = await AsyncStorage.getItem('compulsionEntries');
+      const allCompulsions: CompulsionEntry[] = compulsionData ? JSON.parse(compulsionData) : [];
+      setCompulsions(allCompulsions);
+
+      // Calculate today's entries
+      const today = new Date().toDateString();
+      const todayCompulsions = allCompulsions.filter(
+        c => new Date(c.timestamp).toDateString() === today
+      );
+      setTodayEntries(todayCompulsions.length);
+
+      // Load daily goal
+      const goalData = await AsyncStorage.getItem('dailyGoal');
+      if (goalData) {
+        setDailyGoal(parseInt(goalData));
+      }
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    }
+  };
 
   useEffect(() => {
+    loadData();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
+  const handleQuickEntryComplete = () => {
+    setShowQuickEntry(false);
+    loadData(); // Refresh data
+  };
+
+  const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) setGreeting(t('dashboard.goodMorning'));
-    else if (hour < 18) setGreeting(t('dashboard.goodAfternoon'));
-    else setGreeting(t('dashboard.goodEvening'));
-  }, [t]);
+    if (hour < 12) return 'Günaydın';
+    if (hour < 18) return 'İyi günler';
+    return 'İyi akşamlar';
+  };
 
-  const QuickActionCard = ({ 
-    title, 
-    subtitle, 
-    icon, 
-    color, 
-    onPress,
-    badge 
-  }: {
-    title: string;
-    subtitle: string;
-    icon: string;
-    color: string;
-    onPress: () => void;
-    badge?: number;
-  }) => (
-    <TouchableOpacity 
-      style={[styles.quickActionCard, { borderLeftColor: color }]} 
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <View style={styles.quickActionContent}>
-        <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
-          <MaterialCommunityIcons name={icon as any} size={24} color={color} />
-          {badge && badge > 0 && (
-            <View style={[styles.badge, { backgroundColor: color }]}>
-              <Text style={styles.badgeText}>{badge}</Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.quickActionText}>
-          <Text style={styles.quickActionTitle}>{title}</Text>
-          <Text style={styles.quickActionSubtitle}>{subtitle}</Text>
-        </View>
-        <MaterialCommunityIcons 
-          name="chevron-right" 
-          size={20} 
-          color={Colors.light.icon} 
-        />
-      </View>
-    </TouchableOpacity>
-  );
-
-  const StatCard = ({ 
-    value, 
-    label, 
-    icon, 
-    color,
-    trend 
-  }: {
-    value: string | number;
-    label: string;
-    icon: string;
-    color: string;
-    trend?: 'up' | 'down' | 'stable';
-  }) => (
-    <View style={styles.statCard}>
-      <View style={[styles.statIconContainer, { backgroundColor: color + '20' }]}>
-        <MaterialCommunityIcons name={icon as any} size={20} color={color} />
-      </View>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-      {trend && (
-        <View style={styles.trendContainer}>
-          <MaterialCommunityIcons 
-            name={trend === 'up' ? 'trending-up' : trend === 'down' ? 'trending-down' : 'trending-neutral'} 
-            size={12} 
-            color={trend === 'up' ? Colors.light.success : trend === 'down' ? Colors.light.error : Colors.light.icon} 
-          />
-        </View>
-      )}
-    </View>
-  );
+  const progressPercentage = Math.min((todayEntries / dailyGoal) * 100, 100);
 
   return (
-    <ScreenLayout scrollable={true} backgroundColor={Colors.light.backgroundSecondary}>
-      {/* Header with Gradient */}
-      <LinearGradient
-        colors={Colors.light.gradient}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+    <ThemedView style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.greeting}>{greeting}</Text>
-            <Text style={styles.userName}>{t('dashboard.welcome')}</Text>
+        {/* Header */}
+        <ThemedView style={styles.header}>
+          <ThemedText type="title" style={styles.appTitle}>ObsessLess</ThemedText>
+          <ThemedText style={styles.greeting}>{getGreeting()}! 👋</ThemedText>
+        </ThemedView>
+
+        {/* Today's Progress */}
+        <Card style={styles.progressCard}>
+          <ThemedText type="subtitle" style={styles.cardTitle}>
+            Bugünkü İlerleme
+          </ThemedText>
+          <View style={styles.progressContainer}>
+            <ProgressBar 
+              progress={progressPercentage} 
+              height={12} 
+              backgroundColor="#E5E7EB"
+              progressColor="#10B981"
+            />
+            <ThemedText style={styles.progressText}>
+              {todayEntries} / {dailyGoal} hedef
+            </ThemedText>
           </View>
-          <TouchableOpacity style={styles.profileButton}>
-            <MaterialCommunityIcons name="account-circle" size={32} color="white" />
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
+          {todayEntries >= dailyGoal && (
+            <ThemedText style={styles.congratsText}>
+              🎉 Bugünkü hedefinizi tamamladınız!
+            </ThemedText>
+          )}
+        </Card>
 
-      {/* Streak Counter */}
-      <View style={styles.streakContainer}>
+        {/* Streak Counter */}
         <StreakCounter />
-      </View>
 
-      {/* Today's Overview */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('dashboard.todayOverview')}</Text>
-        <View style={styles.statsGrid}>
-          <StatCard
-            value={todayStats?.compulsionCount || 0}
-            label={t('dashboard.compulsions')}
-            icon="brain"
-            color={Colors.light.error}
-            trend="down"
-          />
-          <StatCard
-            value={todayStats?.erpMinutes || 0}
-            label={t('dashboard.erpMinutes')}
-            icon="shield-check"
-            color={Colors.light.success}
-            trend="up"
-          />
-          <StatCard
-            value={todayStats?.resistanceAvg || 0}
-            label={t('dashboard.resistance')}
-            icon="chart-line"
-            color={Colors.light.info}
-            trend="stable"
-          />
+        {/* Quick Stats */}
+        <View style={styles.statsRow}>
+          <Card style={styles.statCard}>
+            <ThemedText style={styles.statNumber}>
+              {compulsions.length}
+            </ThemedText>
+            <ThemedText style={styles.statLabel}>Toplam Kayıt</ThemedText>
+          </Card>
+
+          <Card style={styles.statCard}>
+            <ThemedText style={styles.statNumber}>
+              {compulsions.filter(c => 
+                new Date(c.timestamp).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000
+              ).length}
+            </ThemedText>
+            <ThemedText style={styles.statLabel}>Bu Hafta</ThemedText>
+          </Card>
         </View>
-      </View>
 
-      {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('dashboard.quickActions')}</Text>
-        <View style={styles.quickActionsContainer}>
-          <QuickActionCard
-            title={t('dashboard.trackCompulsion')}
-            subtitle={t('dashboard.logNewEntry')}
-            icon="plus-circle"
-            color={Colors.light.tint}
-            onPress={() => router.push('/tracking')}
-          />
-          <QuickActionCard
-            title={t('dashboard.startERP')}
-            subtitle={t('dashboard.beginExercise')}
-            icon="play-circle"
-            color={Colors.light.success}
-            onPress={() => router.push('/erp')}
-          />
-          <QuickActionCard
-            title={t('dashboard.viewProgress')}
-            subtitle={t('dashboard.seeAnalytics')}
-            icon="chart-arc"
-            color={Colors.light.info}
-            onPress={() => router.push('/assessment')}
-          />
-        </View>
-      </View>
+        {/* Recent Activity Summary */}
+        <CompulsionSummary limit={5} showTitle={true} />
 
-      {/* Motivational Quote */}
-      <View style={styles.motivationCard}>
-        <MaterialCommunityIcons 
-          name="lightbulb-on" 
-          size={24} 
-          color={Colors.light.warning} 
-        />
-        <Text style={styles.motivationText}>
-          {t('dashboard.motivationalQuote')}
-        </Text>
-      </View>
-    </ScreenLayout>
+        {/* Achievement System */}
+        <AchievementSystem />
+
+        {/* Quick Actions */}
+        <Card style={styles.actionsCard}>
+          <ThemedText type="subtitle" style={styles.cardTitle}>
+            Hızlı İşlemler
+          </ThemedText>
+          <View style={styles.actionsRow}>
+            <Button
+              title="ERP Egzersizi"
+              onPress={() => {
+                // Navigate to ERP
+                Alert.alert('Info', 'ERP sekmesine yönlendiriliyor...');
+              }}
+              style={[styles.actionButton, { backgroundColor: '#3B82F6' }]}
+            />
+            <Button
+              title="Değerlendirme"
+              onPress={() => {
+                // Navigate to Assessment
+                Alert.alert('Info', 'Değerlendirme sekmesine yönlendiriliyor...');
+              }}
+              style={[styles.actionButton, { backgroundColor: '#8B5CF6' }]}
+            />
+          </View>
+        </Card>
+
+        {/* Bottom padding for FAB */}
+        <View style={styles.bottomPadding} />
+      </ScrollView>
+
+      {/* Floating Action Button */}
+      <FloatingActionButton
+        onPress={() => setShowQuickEntry(true)}
+        icon="plus"
+        style={styles.fab}
+      />
+
+      {/* Quick Entry Bottom Sheet */}
+      <BottomSheet
+        isVisible={showQuickEntry}
+        onClose={() => setShowQuickEntry(false)}
+        title="Hızlı Kompulsiyon Kaydı"
+      >
+        <CompulsionQuickEntry onClose={handleQuickEntryComplete} />
+      </BottomSheet>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    marginHorizontal: -Spacing.md,
-    marginTop: -Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xl,
-    borderBottomLeftRadius: BorderRadius.xl,
-    borderBottomRightRadius: BorderRadius.xl,
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
   },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  header: {
+    padding: 20,
+    paddingTop: 60,
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 20 : 0,
+  },
+  appTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#10B981',
+    marginBottom: 8,
   },
   greeting: {
-    fontSize: Typography.fontSize.md,
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontWeight: Typography.fontWeight.normal,
+    fontSize: 18,
+    color: '#6B7280',
   },
-  userName: {
-    fontSize: Typography.fontSize.xxl,
-    color: 'white',
-    fontWeight: Typography.fontWeight.bold,
-    marginTop: Spacing.xs,
+  progressCard: {
+    margin: 16,
+    padding: 20,
   },
-  profileButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: BorderRadius.full,
-    padding: Spacing.sm,
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+    color: '#111827',
   },
-  streakContainer: {
-    marginVertical: Spacing.lg,
+  progressContainer: {
+    gap: 12,
   },
-  section: {
-    marginBottom: Spacing.xl,
+  progressText: {
+    textAlign: 'center',
+    fontSize: 14,
+    color: '#6B7280',
   },
-  sectionTitle: {
-    fontSize: Typography.fontSize.lg,
-    fontWeight: Typography.fontWeight.semibold,
-    color: Colors.light.text,
-    marginBottom: Spacing.md,
+  congratsText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#10B981',
+    fontWeight: '600',
+    marginTop: 12,
   },
-  statsGrid: {
+  statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: Spacing.sm,
+    paddingHorizontal: 16,
+    gap: 12,
   },
   statCard: {
     flex: 1,
-    backgroundColor: Colors.light.card,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
+    padding: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
-  statIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: BorderRadius.sm,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.sm,
-  },
-  statValue: {
-    fontSize: Typography.fontSize.xl,
-    fontWeight: Typography.fontWeight.bold,
-    color: Colors.light.text,
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#10B981',
+    marginBottom: 4,
   },
   statLabel: {
-    fontSize: Typography.fontSize.sm,
-    color: Colors.light.icon,
+    fontSize: 12,
+    color: '#6B7280',
     textAlign: 'center',
-    marginTop: Spacing.xs,
   },
-  trendContainer: {
-    position: 'absolute',
-    top: Spacing.sm,
-    right: Spacing.sm,
+  actionsCard: {
+    margin: 16,
+    padding: 20,
   },
-  quickActionsContainer: {
-    gap: Spacing.sm,
-  },
-  quickActionCard: {
-    backgroundColor: Colors.light.card,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  quickActionContent: {
+  actionsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    gap: 12,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: BorderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
+  actionButton: {
+    flex: 1,
   },
-  badge: {
+  bottomPadding: {
+    height: 20,
+  },
+  fab: {
     position: 'absolute',
-    top: -4,
-    right: -4,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: Typography.fontWeight.semibold,
-  },
-  quickActionText: {
-    flex: 1,
-    marginLeft: Spacing.md,
-  },
-  quickActionTitle: {
-    fontSize: Typography.fontSize.md,
-    fontWeight: Typography.fontWeight.semibold,
-    color: Colors.light.text,
-  },
-  quickActionSubtitle: {
-    fontSize: Typography.fontSize.sm,
-    color: Colors.light.icon,
-    marginTop: Spacing.xs,
-  },
-  motivationCard: {
-    backgroundColor: Colors.light.card,
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.light.warning + '30',
-  },
-  motivationText: {
-    flex: 1,
-    marginLeft: Spacing.md,
-    fontSize: Typography.fontSize.md,
-    color: Colors.light.text,
-    lineHeight: 22,
-    fontStyle: 'italic',
+    bottom: 20,
+    right: 20,
   },
 });

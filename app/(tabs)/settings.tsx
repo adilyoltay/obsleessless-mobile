@@ -1,390 +1,445 @@
 
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-  Alert,
-} from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, Typography } from '@/constants/Colors';
-import { useTranslation } from '@/hooks/useTranslation';
-import { ScreenLayout } from '@/components/layout/ScreenLayout';
-import { useAuth } from '@/contexts/AuthContext';
+<old_str>import { StyleSheet } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 
 export default function SettingsScreen() {
-  const { t } = useTranslation();
-  const { logout } = useAuth();
-  const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-  const [analytics, setAnalytics] = useState(true);
-
-  const SettingItem = ({ 
-    title, 
-    subtitle, 
-    icon, 
-    onPress, 
-    rightComponent,
-    color = Colors.light.tint,
-    showChevron = true
-  }: {
-    title: string;
-    subtitle?: string;
-    icon: string;
-    onPress?: () => void;
-    rightComponent?: React.ReactNode;
-    color?: string;
-    showChevron?: boolean;
-  }) => (
-    <TouchableOpacity
-      style={styles.settingItem}
-      onPress={onPress}
-      activeOpacity={0.7}
-      disabled={!onPress}
-    >
-      <View style={[styles.settingIconContainer, { backgroundColor: color + '20' }]}>
-        <MaterialCommunityIcons name={icon as any} size={20} color={color} />
-      </View>
-      <View style={styles.settingContent}>
-        <Text style={styles.settingTitle}>{title}</Text>
-        {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
-      </View>
-      {rightComponent || (showChevron && (
-        <MaterialCommunityIcons 
-          name="chevron-right" 
-          size={20} 
-          color={Colors.light.icon} 
-        />
-      ))}
-    </TouchableOpacity>
-  );
-
-  const SettingSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <View style={styles.settingSection}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionContent}>
-        {children}
-      </View>
-    </View>
-  );
-
-  const handleLogout = () => {
-    Alert.alert(
-      t('settings.confirmLogout'),
-      t('settings.logoutMessage'),
-      [
-        { text: t('settings.cancel'), style: 'cancel' },
-        { 
-          text: t('settings.logout'), 
-          style: 'destructive',
-          onPress: logout 
-        },
-      ]
-    );
-  };
-
-  const ProfileCard = () => (
-    <View style={styles.profileCard}>
-      <LinearGradient
-        colors={Colors.light.gradient}
-        style={styles.profileGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-      <View style={styles.profileAvatar}>
-        <MaterialCommunityIcons name="account" size={32} color="white" />
-      </View>
-      <View style={styles.profileInfo}>
-        <Text style={styles.profileName}>Kullanıcı Adı</Text>
-        <Text style={styles.profileEmail}>user@example.com</Text>
-        <Text style={styles.profileJoinDate}>2024'ten beri üye</Text>
-      </View>
-      <TouchableOpacity style={styles.profileEditButton}>
-        <MaterialCommunityIcons name="pencil" size={18} color="white" />
-      </TouchableOpacity>
-    </View>
-  );
-
   return (
-    <ScreenLayout scrollable={true} backgroundColor={Colors.light.backgroundSecondary}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('settings.title')}</Text>
-        <Text style={styles.headerSubtitle}>{t('settings.subtitle')}</Text>
-      </View>
-
-      {/* Profile Card */}
-      <ProfileCard />
-
-      {/* Settings Sections */}
-      <SettingSection title={t('settings.preferences')}>
-        <SettingItem
-          title={t('settings.notifications')}
-          subtitle={t('settings.notificationsDesc')}
-          icon="bell"
-          color={Colors.light.warning}
-          rightComponent={
-            <Switch
-              value={notifications}
-              onValueChange={setNotifications}
-              trackColor={{ false: Colors.light.border, true: Colors.light.warning }}
-              thumbColor={notifications ? 'white' : Colors.light.icon}
-            />
-          }
-          showChevron={false}
-        />
-        <SettingItem
-          title={t('settings.darkMode')}
-          subtitle={t('settings.darkModeDesc')}
-          icon="theme-light-dark"
-          color={Colors.light.info}
-          rightComponent={
-            <Switch
-              value={darkMode}
-              onValueChange={setDarkMode}
-              trackColor={{ false: Colors.light.border, true: Colors.light.info }}
-              thumbColor={darkMode ? 'white' : Colors.light.icon}
-            />
-          }
-          showChevron={false}
-        />
-        <SettingItem
-          title={t('settings.language')}
-          subtitle="Türkçe"
-          icon="translate"
-          color={Colors.light.success}
-          onPress={() => {}}
-        />
-      </SettingSection>
-
-      <SettingSection title={t('settings.privacy')}>
-        <SettingItem
-          title={t('settings.analytics')}
-          subtitle={t('settings.analyticsDesc')}
-          icon="chart-box"
-          color={Colors.light.tint}
-          rightComponent={
-            <Switch
-              value={analytics}
-              onValueChange={setAnalytics}
-              trackColor={{ false: Colors.light.border, true: Colors.light.tint }}
-              thumbColor={analytics ? 'white' : Colors.light.icon}
-            />
-          }
-          showChevron={false}
-        />
-        <SettingItem
-          title={t('settings.dataExport')}
-          subtitle={t('settings.dataExportDesc')}
-          icon="download"
-          color={Colors.light.info}
-          onPress={() => {}}
-        />
-        <SettingItem
-          title={t('settings.deleteAccount')}
-          subtitle={t('settings.deleteAccountDesc')}
-          icon="delete-forever"
-          color={Colors.light.error}
-          onPress={() => {}}
-        />
-      </SettingSection>
-
-      <SettingSection title={t('settings.support')}>
-        <SettingItem
-          title={t('settings.help')}
-          subtitle={t('settings.helpDesc')}
-          icon="help-circle"
-          color={Colors.light.success}
-          onPress={() => {}}
-        />
-        <SettingItem
-          title={t('settings.feedback')}
-          subtitle={t('settings.feedbackDesc')}
-          icon="message-text"
-          color={Colors.light.warning}
-          onPress={() => {}}
-        />
-        <SettingItem
-          title={t('settings.about')}
-          subtitle="v1.0.0"
-          icon="information"
-          color={Colors.light.info}
-          onPress={() => {}}
-        />
-      </SettingSection>
-
-      {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <MaterialCommunityIcons name="logout" size={20} color={Colors.light.error} />
-        <Text style={styles.logoutText}>{t('settings.logout')}</Text>
-      </TouchableOpacity>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>ObsessLess v1.0.0</Text>
-        <Text style={styles.footerSubtext}>Made with ❤️ for mental wellness</Text>
-      </View>
-    </ScreenLayout>
+    <ThemedView style={styles.container}>
+      <ThemedText type="title">Settings</ThemedText>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.md,
-    backgroundColor: Colors.light.background,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
-  },
-  headerTitle: {
-    fontSize: Typography.fontSize.xxl,
-    fontWeight: Typography.fontWeight.bold,
-    color: Colors.light.text,
-  },
-  headerSubtitle: {
-    fontSize: Typography.fontSize.md,
-    color: Colors.light.icon,
-    marginTop: Spacing.xs,
-  },
-  profileCard: {
-    backgroundColor: Colors.light.card,
-    margin: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    position: 'relative',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  profileGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  profileAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: BorderRadius.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  container: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.md,
   },
-  profileInfo: {
+});</old_str>
+<new_str>import React, { useState, useEffect } from 'react';
+import { 
+  StyleSheet, 
+  ScrollView, 
+  View, 
+  Text, 
+  Alert,
+  Share,
+  Linking 
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Switch } from '@/components/ui/Switch';
+import { Picker } from '@/components/ui/Picker';
+import { Slider } from '@/components/ui/Slider';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+interface SettingsData {
+  dailyGoal: number;
+  reminderEnabled: boolean;
+  reminderTime: string;
+  hapticFeedback: boolean;
+  dataExport: boolean;
+  language: 'tr' | 'en';
+  themeMode: 'light' | 'dark' | 'system';
+}
+
+const defaultSettings: SettingsData = {
+  dailyGoal: 3,
+  reminderEnabled: true,
+  reminderTime: '20:00',
+  hapticFeedback: true,
+  dataExport: true,
+  language: 'tr',
+  themeMode: 'light',
+};
+
+export default function SettingsScreen() {
+  const [settings, setSettings] = useState<SettingsData>(defaultSettings);
+  const [loading, setLoading] = useState(false);
+  const { language, setLanguage, t } = useLanguage();
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const savedSettings = await AsyncStorage.getItem('appSettings');
+      if (savedSettings) {
+        setSettings({ ...defaultSettings, ...JSON.parse(savedSettings) });
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
+
+  const saveSettings = async (newSettings: SettingsData) => {
+    try {
+      await AsyncStorage.setItem('appSettings', JSON.stringify(newSettings));
+      setSettings(newSettings);
+      if (settings.hapticFeedback) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      Alert.alert('Hata', 'Ayarlar kaydedilemedi');
+    }
+  };
+
+  const updateSetting = <K extends keyof SettingsData>(
+    key: K, 
+    value: SettingsData[K]
+  ) => {
+    const newSettings = { ...settings, [key]: value };
+    saveSettings(newSettings);
+  };
+
+  const exportData = async () => {
+    setLoading(true);
+    try {
+      // Collect all user data
+      const compulsions = await AsyncStorage.getItem('compulsionEntries');
+      const erpSessions = await AsyncStorage.getItem('erpSessions');
+      const ybocs = await AsyncStorage.getItem('ybocs_assessment');
+      const profile = await AsyncStorage.getItem('ocd_profile');
+
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        compulsions: compulsions ? JSON.parse(compulsions) : [],
+        erpSessions: erpSessions ? JSON.parse(erpSessions) : [],
+        ybocs: ybocs ? JSON.parse(ybocs) : null,
+        profile: profile ? JSON.parse(profile) : null,
+        settings: settings,
+      };
+
+      const dataString = JSON.stringify(exportData, null, 2);
+      
+      await Share.share({
+        message: dataString,
+        title: 'ObsessLess Veri Dışa Aktarımı',
+      });
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      Alert.alert('Hata', 'Veriler dışa aktarılamadı');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearAllData = () => {
+    Alert.alert(
+      'Tüm Verileri Sil',
+      'Bu işlem tüm verilerinizi kalıcı olarak silecektir. Bu işlem geri alınamaz.',
+      [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Sil',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await AsyncStorage.multiRemove([
+                'compulsionEntries',
+                'erpSessions',
+                'ybocs_assessment',
+                'ocd_profile',
+                'achievements',
+                'streaks',
+              ]);
+              Alert.alert('Başarılı', 'Tüm veriler silindi');
+            } catch (error) {
+              Alert.alert('Hata', 'Veriler silinemedi');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const openPrivacyPolicy = () => {
+    Linking.openURL('https://obsessless.app/privacy');
+  };
+
+  const openTerms = () => {
+    Linking.openURL('https://obsessless.app/terms');
+  };
+
+  const sendFeedback = () => {
+    Linking.openURL('mailto:feedback@obsessless.app?subject=ObsessLess Geri Bildirim');
+  };
+
+  return (
+    <ThemedView style={styles.container}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <ThemedText type="title" style={styles.title}>Ayarlar</ThemedText>
+
+        {/* Daily Goals */}
+        <Card style={styles.section}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Günlük Hedefler
+          </ThemedText>
+          
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Günlük Kayıt Hedefi</Text>
+              <Text style={styles.settingDescription}>
+                Günde kaç kompulsiyon kaydı yapmayı hedefliyorsunuz
+              </Text>
+            </View>
+            <View style={styles.sliderContainer}>
+              <Slider
+                value={settings.dailyGoal}
+                onValueChange={(value) => updateSetting('dailyGoal', Math.round(value))}
+                minimumValue={1}
+                maximumValue={10}
+                step={1}
+                style={styles.slider}
+              />
+              <Text style={styles.sliderValue}>{settings.dailyGoal}</Text>
+            </View>
+          </View>
+        </Card>
+
+        {/* Notifications */}
+        <Card style={styles.section}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Bildirimler
+          </ThemedText>
+          
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Günlük Hatırlatıcı</Text>
+              <Text style={styles.settingDescription}>
+                Günlük kayıt yapmayı hatırlatacak bildirim
+              </Text>
+            </View>
+            <Switch
+              value={settings.reminderEnabled}
+              onValueChange={(value) => updateSetting('reminderEnabled', value)}
+            />
+          </View>
+
+          {settings.reminderEnabled && (
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingLabel}>Hatırlatıcı Saati</Text>
+              </View>
+              <Picker
+                selectedValue={settings.reminderTime}
+                onValueChange={(value) => updateSetting('reminderTime', value)}
+                style={styles.timePicker}
+              >
+                <Picker.Item label="08:00" value="08:00" />
+                <Picker.Item label="12:00" value="12:00" />
+                <Picker.Item label="16:00" value="16:00" />
+                <Picker.Item label="20:00" value="20:00" />
+                <Picker.Item label="22:00" value="22:00" />
+              </Picker>
+            </View>
+          )}
+        </Card>
+
+        {/* User Experience */}
+        <Card style={styles.section}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Kullanıcı Deneyimi
+          </ThemedText>
+          
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Haptic Geri Bildirim</Text>
+              <Text style={styles.settingDescription}>
+                Dokunmatik titreşim geri bildirimi
+              </Text>
+            </View>
+            <Switch
+              value={settings.hapticFeedback}
+              onValueChange={(value) => updateSetting('hapticFeedback', value)}
+            />
+          </View>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Dil</Text>
+              <Text style={styles.settingDescription}>
+                Uygulama dili
+              </Text>
+            </View>
+            <Picker
+              selectedValue={settings.language}
+              onValueChange={(value) => {
+                updateSetting('language', value);
+                setLanguage(value);
+              }}
+              style={styles.languagePicker}
+            >
+              <Picker.Item label="Türkçe" value="tr" />
+              <Picker.Item label="English" value="en" />
+            </Picker>
+          </View>
+        </Card>
+
+        {/* Data Management */}
+        <Card style={styles.section}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Veri Yönetimi
+          </ThemedText>
+          
+          <Button
+            title="Verilerimi Dışa Aktar"
+            onPress={exportData}
+            loading={loading}
+            style={styles.actionButton}
+          />
+          
+          <Button
+            title="Tüm Verileri Sil"
+            onPress={clearAllData}
+            style={[styles.actionButton, styles.dangerButton]}
+          />
+        </Card>
+
+        {/* Support & Legal */}
+        <Card style={styles.section}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Destek & Yasal
+          </ThemedText>
+          
+          <Button
+            title="Geri Bildirim Gönder"
+            onPress={sendFeedback}
+            style={styles.actionButton}
+          />
+          
+          <Button
+            title="Gizlilik Politikası"
+            onPress={openPrivacyPolicy}
+            style={styles.actionButton}
+          />
+          
+          <Button
+            title="Kullanım Koşulları"
+            onPress={openTerms}
+            style={styles.actionButton}
+          />
+        </Card>
+
+        {/* App Info */}
+        <Card style={styles.section}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Uygulama Bilgileri
+          </ThemedText>
+          
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Versiyon</Text>
+            <Text style={styles.infoValue}>1.0.0</Text>
+          </View>
+          
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Build</Text>
+            <Text style={styles.infoValue}>100</Text>
+          </View>
+        </Card>
+      </ScrollView>
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  scrollView: {
     flex: 1,
   },
-  profileName: {
-    fontSize: Typography.fontSize.xl,
-    fontWeight: Typography.fontWeight.bold,
-    color: 'white',
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 32,
   },
-  profileEmail: {
-    fontSize: Typography.fontSize.md,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginTop: Spacing.xs,
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 24,
+    paddingTop: 40,
   },
-  profileJoinDate: {
-    fontSize: Typography.fontSize.sm,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginTop: Spacing.xs,
-  },
-  profileEditButton: {
-    position: 'absolute',
-    top: Spacing.md,
-    right: Spacing.md,
-    width: 36,
-    height: 36,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  settingSection: {
-    marginBottom: Spacing.lg,
+  section: {
+    padding: 20,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: Typography.fontSize.md,
-    fontWeight: Typography.fontWeight.semibold,
-    color: Colors.light.text,
-    marginBottom: Spacing.sm,
-    paddingHorizontal: Spacing.md,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 16,
   },
-  sectionContent: {
-    backgroundColor: Colors.light.card,
-    marginHorizontal: Spacing.md,
-    borderRadius: BorderRadius.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  settingItem: {
+  settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Spacing.md,
+    justifyContent: 'space-between',
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    borderBottomColor: '#E5E7EB',
   },
-  settingIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: BorderRadius.sm,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  settingContent: {
+  settingInfo: {
     flex: 1,
-    marginLeft: Spacing.md,
+    marginRight: 16,
   },
-  settingTitle: {
-    fontSize: Typography.fontSize.md,
-    fontWeight: Typography.fontWeight.medium,
-    color: Colors.light.text,
+  settingLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#111827',
+    marginBottom: 4,
   },
-  settingSubtitle: {
-    fontSize: Typography.fontSize.sm,
-    color: Colors.light.icon,
-    marginTop: 2,
+  settingDescription: {
+    fontSize: 14,
+    color: '#6B7280',
   },
-  logoutButton: {
+  sliderContainer: {
+    width: 120,
+    alignItems: 'center',
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  sliderValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#10B981',
+    marginTop: 4,
+  },
+  timePicker: {
+    width: 100,
+  },
+  languagePicker: {
+    width: 120,
+  },
+  actionButton: {
+    marginVertical: 8,
+  },
+  dangerButton: {
+    backgroundColor: '#EF4444',
+  },
+  infoRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.light.card,
-    marginHorizontal: Spacing.md,
-    marginTop: Spacing.lg,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.light.error + '30',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
   },
-  logoutText: {
-    fontSize: Typography.fontSize.md,
-    fontWeight: Typography.fontWeight.medium,
-    color: Colors.light.error,
-    marginLeft: Spacing.sm,
+  infoLabel: {
+    fontSize: 16,
+    color: '#6B7280',
   },
-  footer: {
-    alignItems: 'center',
-    padding: Spacing.xl,
+  infoValue: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#111827',
   },
-  footerText: {
-    fontSize: Typography.fontSize.sm,
-    color: Colors.light.icon,
-    fontWeight: Typography.fontWeight.medium,
-  },
-  footerSubtext: {
-    fontSize: Typography.fontSize.xs,
-    color: Colors.light.icon,
-    marginTop: Spacing.xs,
-  },
-});
+});</new_str>

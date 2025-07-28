@@ -1,62 +1,101 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
-import { Card, Text, Button, ProgressBar, Chip } from 'react-native-paper';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useTranslation } from '@/hooks/useTranslation';
-import { Slider } from '@/components/ui/Slider';
+
+<old_str>import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+
+interface ERPTimerProps {
+  // Props will be defined here
+}
+
+export const ERPTimer: React.FC<ERPTimerProps> = () => {
+  return (
+    <View style={styles.container}>
+      <Text>ERP Timer Component</Text>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});</old_str>
+<new_str>import React, { useState, useEffect, useRef } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Alert, 
+  Dimensions,
+  Vibration,
+  AppState,
+  AppStateStatus 
+} from 'react-native';
+import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Slider } from '@/components/ui/Slider';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 
 interface ERPSession {
   id: string;
   exerciseId: string;
-  startTime: Date;
-  endTime?: Date;
-  duration: number;
-  initialAnxiety: number;
-  peakAnxiety: number;
-  finalAnxiety: number;
-  resistanceCount: number;
-  targetDuration: number;
+  exerciseName: string;
+  startTime: string;
+  endTime?: string;
+  duration: number; // in seconds
+  completed: boolean;
+  anxietyLevels: AnxietyReading[];
   notes?: string;
+}
+
+interface AnxietyReading {
+  timestamp: string;
+  level: number; // 0-10
+  timeInSession: number; // seconds from start
 }
 
 interface ERPTimerProps {
   exerciseId: string;
   exerciseName: string;
-  exerciseDescription: string;
-  onSessionComplete: (session: ERPSession) => void;
-  onCancel: () => void;
+  recommendedDuration?: number; // in seconds
+  onComplete?: (session: ERPSession) => void;
+  onCancel?: () => void;
 }
 
-export function ERPTimer({
+const { width } = Dimensions.get('window');
+
+export const ERPTimer: React.FC<ERPTimerProps> = ({
   exerciseId,
   exerciseName,
-  exerciseDescription,
-  onSessionComplete,
-  onCancel
-}: ERPTimerProps) {
-  const { t } = useTranslation();
+  recommendedDuration = 900, // 15 minutes default
+  onComplete,
+  onCancel,
+}) => {
   const [isRunning, setIsRunning] = useState(false);
-  const [duration, setDuration] = useState(0);
-  const [targetDuration, setTargetDuration] = useState(10); // minutes
-  const [initialAnxiety, setInitialAnxiety] = useState(5);
-  const [currentAnxiety, setCurrentAnxiety] = useState(5);
-  const [peakAnxiety, setPeakAnxiety] = useState(5);
-  const [resistanceCount, setResistanceCount] = useState(0);
-  const [phase, setPhase] = useState<'setup' | 'running' | 'completed'>('setup');
-  const [lastAnxietyCheck, setLastAnxietyCheck] = useState(Date.now());
+  const [isPaused, setIsPaused] = useState(false);
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [anxietyLevel, setAnxietyLevel] = useState(5);
+  const [anxietyReadings, setAnxietyReadings] = useState<AnxietyReading[]>([]);
+  const [sessionId] = useState(() => `erp_${Date.now()}`);
+  const [startTime, setStartTime] = useState<string | null>(null);
 
-  const intervalRef = useRef<NodeJS.Timeout>();
-  const anxietyHistoryRef = useRef<Array<{time: number, level: number}>>([]);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const appStateRef = useRef(AppState.currentState);
+  const backgroundTimeRef = useRef<number | null>(null);
 
+  // Timer effect
   useEffect(() => {
-    if (isRunning) {
+    if (isRunning && !isPaused) {
       intervalRef.current = setInterval(() => {
-        setDuration(prev => prev + 1);
+        setTimeElapsed(prev => prev + 1);
       }, 1000);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     }
 
@@ -65,85 +104,147 @@ export function ERPTimer({
         clearInterval(intervalRef.current);
       }
     };
-  }, [isRunning]);
+  }, [isRunning, isPaused]);
 
-  // Anxiety check reminders every 5 minutes
+  // Anxiety reminder effect
   useEffect(() => {
-    if (isRunning && duration > 0 && duration % 300 === 0) {
-      Alert.alert(
-        t('erp.anxietyCheck'),
-        t('erp.rateCurrentAnxiety'),
-        [{ text: 'OK' }]
-      );
+    if (isRunning && timeElapsed > 0 && timeElapsed % 300 === 0) { // Every 5 minutes
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     }
-  }, [duration, isRunning, t]);
+  }, [timeElapsed, isRunning]);
 
-  // Motivational messages every 10 minutes
+  // App state handling for background timer
   useEffect(() => {
-    if (isRunning && duration > 0 && duration % 600 === 0) {
-      const messages = [
-        t('erp.motivationMessage1'),
-        t('erp.motivationMessage2'),
-        t('erp.motivationMessage3'),
-        t('erp.motivationMessage4')
-      ];
-      const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-      Alert.alert(t('erp.keepGoing'), randomMessage, [{ text: 'OK' }]);
-    }
-  }, [duration, isRunning, t]);
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+        // App has come to foreground
+        if (backgroundTimeRef.current && isRunning && !isPaused) {
+          const timeDiff = Math.floor((Date.now() - backgroundTimeRef.current) / 1000);
+          setTimeElapsed(prev => prev + timeDiff);
+        }
+        backgroundTimeRef.current = null;
+      } else if (nextAppState.match(/inactive|background/) && isRunning && !isPaused) {
+        // App going to background
+        backgroundTimeRef.current = Date.now();
+      }
+      appStateRef.current = nextAppState;
+    };
 
-  const startSession = () => {
-    setPhase('running');
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [isRunning, isPaused]);
+
+  const startTimer = () => {
+    const now = new Date().toISOString();
+    setStartTime(now);
     setIsRunning(true);
-    anxietyHistoryRef.current = [{time: 0, level: initialAnxiety}];
-    setCurrentAnxiety(initialAnxiety);
-    setPeakAnxiety(initialAnxiety);
+    setIsPaused(false);
+    setTimeElapsed(0);
+    setAnxietyReadings([]);
+    
+    // Record initial anxiety level
+    recordAnxietyLevel();
+    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
-  const handleAnxietyUpdate = (level: number) => {
-    setCurrentAnxiety(level);
-    setPeakAnxiety(Math.max(peakAnxiety, level));
-    anxietyHistoryRef.current.push({time: duration, level});
+  const pauseTimer = () => {
+    setIsPaused(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const recordResistance = () => {
-    setResistanceCount(prev => prev + 1);
+  const resumeTimer = () => {
+    setIsPaused(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const stopTimer = () => {
+    setIsRunning(false);
+    setIsPaused(false);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    
     Alert.alert(
-      t('erp.resistanceRecorded'),
-      t('erp.stayStrong'),
-      [{ text: 'OK' }]
+      'Oturum Sonlandır',
+      'Bu ERP oturumunu tamamlamak istiyor musunuz?',
+      [
+        {
+          text: 'İptal',
+          style: 'cancel',
+          onPress: () => {
+            setIsRunning(true);
+          }
+        },
+        {
+          text: 'Tamamla',
+          onPress: completeSession
+        }
+      ]
     );
   };
 
+  const recordAnxietyLevel = () => {
+    const reading: AnxietyReading = {
+      timestamp: new Date().toISOString(),
+      level: anxietyLevel,
+      timeInSession: timeElapsed,
+    };
+    
+    setAnxietyReadings(prev => [...prev, reading]);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
   const completeSession = async () => {
-    setIsRunning(false);
-    setPhase('completed');
+    if (!startTime) return;
 
     const session: ERPSession = {
-      id: Date.now().toString(),
+      id: sessionId,
       exerciseId,
-      startTime: new Date(Date.now() - duration * 1000),
-      endTime: new Date(),
-      duration,
-      initialAnxiety,
-      peakAnxiety,
-      finalAnxiety: currentAnxiety,
-      resistanceCount,
-      targetDuration: targetDuration * 60,
-      notes: ''
+      exerciseName,
+      startTime,
+      endTime: new Date().toISOString(),
+      duration: timeElapsed,
+      completed: true,
+      anxietyLevels: anxietyReadings,
     };
 
-    // Save to AsyncStorage
     try {
+      // Save session to AsyncStorage
       const existingSessions = await AsyncStorage.getItem('erpSessions');
-      const sessions = existingSessions ? JSON.parse(existingSessions) : [];
+      const sessions: ERPSession[] = existingSessions ? JSON.parse(existingSessions) : [];
       sessions.push(session);
       await AsyncStorage.setItem('erpSessions', JSON.stringify(sessions));
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      onComplete?.(session);
     } catch (error) {
       console.error('Error saving ERP session:', error);
+      Alert.alert('Hata', 'Oturum kaydedilemedi');
     }
+  };
 
-    onSessionComplete(session);
+  const cancelSession = () => {
+    Alert.alert(
+      'Oturumu İptal Et',
+      'Bu ERP oturumunu iptal etmek istediğinizden emin misiniz?',
+      [
+        { text: 'Hayır', style: 'cancel' },
+        {
+          text: 'Evet',
+          style: 'destructive',
+          onPress: () => {
+            setIsRunning(false);
+            setIsPaused(false);
+            setTimeElapsed(0);
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+            }
+            onCancel?.();
+          }
+        }
+      ]
+    );
   };
 
   const formatTime = (seconds: number) => {
@@ -152,234 +253,252 @@ export function ERPTimer({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const progress = targetDuration > 0 ? Math.min(duration / (targetDuration * 60), 1) : 0;
+  const getAnxietyColor = (level: number) => {
+    if (level <= 3) return '#10B981'; // Green
+    if (level <= 6) return '#F59E0B'; // Yellow
+    return '#EF4444'; // Red
+  };
 
-  if (phase === 'setup') {
-    return (
-      <Card style={styles.container}>
-        <Card.Content>
-          <Text style={styles.title}>{exerciseName}</Text>
-          <Text style={styles.description}>{exerciseDescription}</Text>
+  const progressPercentage = (timeElapsed / recommendedDuration) * 100;
 
-          <View style={styles.setupSection}>
-            <Text style={styles.sectionTitle}>{t('erp.targetDuration')}</Text>
-            <Slider
-              value={targetDuration}
-              onValueChange={setTargetDuration}
-              minimumValue={5}
-              maximumValue={60}
-              step={5}
-              formatLabel={(value) => `${value} ${t('common.minutes')}`}
-            />
-          </View>
+  return (
+    <View style={styles.container}>
+      <Card style={styles.timerCard}>
+        <Text style={styles.exerciseName}>{exerciseName}</Text>
+        
+        {/* Timer Display */}
+        <View style={styles.timerDisplay}>
+          <Text style={styles.timeText}>{formatTime(timeElapsed)}</Text>
+          {isPaused && <Text style={styles.pausedText}>DURAKLATILDI</Text>}
+        </View>
 
-          <View style={styles.setupSection}>
-            <Text style={styles.sectionTitle}>{t('erp.initialAnxiety')}</Text>
-            <Slider
-              value={initialAnxiety}
-              onValueChange={setInitialAnxiety}
-              minimumValue={1}
-              maximumValue={10}
-              step={1}
-              formatLabel={(value) => `${value}/10`}
-            />
-          </View>
-
-          <View style={styles.buttonRow}>
-            <Button mode="outlined" onPress={onCancel} style={styles.button}>
-              {t('common.cancel')}
-            </Button>
-            <Button mode="contained" onPress={startSession} style={styles.button}>
-              {t('erp.startSession')}
-            </Button>
-          </View>
-        </Card.Content>
-      </Card>
-    );
-  }
-
-  if (phase === 'running') {
-    return (
-      <Card style={styles.container}>
-        <LinearGradient
-          colors={['#E3F2FD', '#BBDEFB']}
-          style={styles.headerGradient}
-        >
-          <Text style={styles.title}>{exerciseName}</Text>
-          <Text style={styles.timer}>{formatTime(duration)}</Text>
+        {/* Progress Bar */}
+        <View style={styles.progressContainer}>
           <ProgressBar 
-            progress={progress} 
-            style={styles.progressBar}
-            color="#2196F3"
+            progress={Math.min(progressPercentage, 100)}
+            height={8}
+            backgroundColor="#E5E7EB"
+            progressColor="#10B981"
           />
           <Text style={styles.progressText}>
-            {t('erp.target')}: {targetDuration} {t('common.minutes')}
+            Hedef: {formatTime(recommendedDuration)}
           </Text>
-        </LinearGradient>
+        </View>
 
-        <Card.Content style={styles.content}>
-          <View style={styles.anxietySection}>
-            <Text style={styles.sectionTitle}>{t('erp.currentAnxiety')}</Text>
-            <View style={styles.anxietyRow}>
-              <Chip 
-                icon="trending-up" 
-                style={[styles.anxietyChip, { backgroundColor: getAnxietyColor(peakAnxiety) }]}
-              >
-                {t('erp.peak')}: {peakAnxiety}/10
-              </Chip>
-              <Chip 
-                icon="pulse" 
-                style={[styles.anxietyChip, { backgroundColor: getAnxietyColor(currentAnxiety) }]}
-              >
-                {t('erp.current')}: {currentAnxiety}/10
-              </Chip>
-            </View>
+        {/* Anxiety Level Tracker */}
+        <Card style={styles.anxietyCard}>
+          <Text style={styles.anxietyTitle}>Anksiyete Seviyesi</Text>
+          <View style={styles.anxietyLevel}>
+            <Text style={[styles.anxietyNumber, { color: getAnxietyColor(anxietyLevel) }]}>
+              {anxietyLevel}
+            </Text>
+            <Text style={styles.anxietyScale}>/10</Text>
+          </View>
+          
+          <Slider
+            value={anxietyLevel}
+            onValueChange={setAnxietyLevel}
+            minimumValue={0}
+            maximumValue={10}
+            step={1}
+            style={styles.anxietySlider}
+            minimumTrackTintColor={getAnxietyColor(anxietyLevel)}
+            maximumTrackTintColor="#E5E7EB"
+          />
+          
+          <View style={styles.anxietyLabels}>
+            <Text style={styles.anxietyLabel}>Çok Düşük</Text>
+            <Text style={styles.anxietyLabel}>Çok Yüksek</Text>
+          </View>
 
-            <Slider
-              value={currentAnxiety}
-              onValueChange={handleAnxietyUpdate}
-              minimumValue={1}
-              maximumValue={10}
-              step={1}
-              formatLabel={(value) => `${value}/10`}
+          {isRunning && (
+            <Button
+              title="Anksiyete Seviyesini Kaydet"
+              onPress={recordAnxietyLevel}
+              style={styles.recordButton}
             />
-          </View>
+          )}
+        </Card>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{resistanceCount}</Text>
-              <Text style={styles.statLabel}>{t('erp.resistances')}</Text>
+        {/* Control Buttons */}
+        <View style={styles.controls}>
+          {!isRunning ? (
+            <Button
+              title="Oturumu Başlat"
+              onPress={startTimer}
+              style={[styles.controlButton, styles.startButton]}
+            />
+          ) : (
+            <View style={styles.runningControls}>
+              {!isPaused ? (
+                <Button
+                  title="Duraklat"
+                  onPress={pauseTimer}
+                  style={[styles.controlButton, styles.pauseButton]}
+                />
+              ) : (
+                <Button
+                  title="Devam Et"
+                  onPress={resumeTimer}
+                  style={[styles.controlButton, styles.resumeButton]}
+                />
+              )}
+              <Button
+                title="Bitir"
+                onPress={stopTimer}
+                style={[styles.controlButton, styles.stopButton]}
+              />
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{Math.floor(duration / 60)}</Text>
-              <Text style={styles.statLabel}>{t('common.minutes')}</Text>
-            </View>
-          </View>
-
-          <View style={styles.buttonRow}>
-            <Button 
-              mode="outlined" 
-              onPress={recordResistance}
-              style={styles.button}
-              icon="alert"
-            >
-              {t('erp.recordResistance')}
-            </Button>
-            <Button 
-              mode="contained" 
-              onPress={completeSession}
-              style={styles.button}
-              buttonColor="#4CAF50"
-            >
-              {t('erp.complete')}
-            </Button>
-          </View>
-        </Card.Content>
+          )}
+          
+          <Button
+            title="İptal"
+            onPress={cancelSession}
+            style={[styles.controlButton, styles.cancelButton]}
+          />
+        </View>
       </Card>
-    );
-  }
 
-  return null;
-}
-
-const getAnxietyColor = (level: number): string => {
-  if (level <= 3) return '#4CAF50';
-  if (level <= 6) return '#FF9800';
-  return '#F44336';
+      {/* Anxiety Readings Summary */}
+      {anxietyReadings.length > 0 && (
+        <Card style={styles.readingsCard}>
+          <Text style={styles.readingsTitle}>Anksiyete Takibi</Text>
+          <Text style={styles.readingsCount}>
+            {anxietyReadings.length} kayıt alındı
+          </Text>
+        </Card>
+      )}
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
   container: {
-    margin: 16,
-    borderRadius: 12,
-    elevation: 4,
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#F9FAFB',
   },
-  headerGradient: {
-    padding: 20,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+  timerCard: {
+    padding: 24,
     alignItems: 'center',
   },
-  title: {
+  exerciseName: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1976D2',
+    fontWeight: '600',
+    color: '#111827',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 24,
   },
-  description: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 16,
+  timerDisplay: {
+    alignItems: 'center',
+    marginBottom: 24,
   },
-  timer: {
+  timeText: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: '#1976D2',
-    marginVertical: 8,
+    color: '#10B981',
+    fontFamily: 'monospace',
   },
-  progressBar: {
-    height: 8,
-    borderRadius: 4,
-    marginVertical: 8,
+  pausedText: {
+    fontSize: 14,
+    color: '#F59E0B',
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  progressContainer: {
     width: '100%',
+    marginBottom: 32,
   },
   progressText: {
-    fontSize: 12,
-    color: '#666',
+    textAlign: 'center',
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 8,
   },
-  content: {
+  anxietyCard: {
+    width: '100%',
     padding: 20,
+    marginBottom: 24,
   },
-  setupSection: {
-    marginVertical: 16,
-  },
-  anxietySection: {
-    marginVertical: 16,
-  },
-  sectionTitle: {
+  anxietyTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 12,
-    color: '#333',
-  },
-  anxietyRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    color: '#111827',
+    textAlign: 'center',
     marginBottom: 16,
   },
-  anxietyChip: {
-    paddingHorizontal: 8,
-  },
-  statsRow: {
+  anxietyLevel: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginVertical: 16,
-    paddingVertical: 16,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 24,
+  anxietyNumber: {
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#1976D2',
   },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
+  anxietyScale: {
+    fontSize: 16,
+    color: '#6B7280',
+    marginLeft: 4,
   },
-  buttonRow: {
+  anxietySlider: {
+    width: '100%',
+    height: 40,
+    marginBottom: 8,
+  },
+  anxietyLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
+    marginBottom: 16,
   },
-  button: {
+  anxietyLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  recordButton: {
+    backgroundColor: '#3B82F6',
+  },
+  controls: {
+    width: '100%',
+    gap: 12,
+  },
+  runningControls: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  controlButton: {
     flex: 1,
-    marginHorizontal: 8,
+    paddingVertical: 12,
   },
-});
+  startButton: {
+    backgroundColor: '#10B981',
+  },
+  pauseButton: {
+    backgroundColor: '#F59E0B',
+  },
+  resumeButton: {
+    backgroundColor: '#10B981',
+  },
+  stopButton: {
+    backgroundColor: '#EF4444',
+  },
+  cancelButton: {
+    backgroundColor: '#6B7280',
+  },
+  readingsCard: {
+    padding: 16,
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  readingsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  readingsCount: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+});</new_str>
