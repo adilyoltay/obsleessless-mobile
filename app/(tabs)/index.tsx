@@ -163,15 +163,7 @@ export default function TodayScreen() {
     const streakData = {
       currentStreak: todayStats.currentStreak,
       longestStreak: 14, // Mock data
-      level: {
-        id: 'beginner',
-        name: 'Başlangıç',
-        emoji: '🌱',
-        minDays: 0,
-        maxDays: 7,
-        color: ['#10B981', '#059669'],
-        benefits: ['Temel takip']
-      },
+      level: 'beginner' as const,
       progress: calculateProgress(),
       nextLevelIn: 3,
       todayCompleted: todayStats.erpSessions > 0,
