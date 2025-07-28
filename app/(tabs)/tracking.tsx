@@ -1,71 +1,174 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { Card, Title, Button, SegmentedButtons, FAB } from 'react-native-paper';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  Pressable,
+  Dimensions 
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import ScreenLayout from '@/components/layout/ScreenLayout';
-import { CompulsionQuickEntry } from '@/components/forms/CompulsionQuickEntry';
-import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
+import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Custom UI Components
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import { SegmentedButtons } from '@/components/ui/SegmentedButtons';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+
+// Feature Components
+import { CompulsionQuickEntry } from '@/components/forms/CompulsionQuickEntry';
 import { CompulsionHistory } from '@/components/compulsions/CompulsionHistory';
 import CompulsionStats from '@/components/compulsions/CompulsionStats';
+
+// Hooks & Utils
 import { useTranslation } from '@/hooks/useTranslation';
+
+const { width } = Dimensions.get('window');
 
 export default function TrackingScreen() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<string>('entry');
   const [showQuickEntry, setShowQuickEntry] = useState(false);
+  const [todayCount, setTodayCount] = useState(0);
+  const [weeklyAverage, setWeeklyAverage] = useState(0);
 
-  const handleEntrySubmit = () => {
-    setShowQuickEntry(false);
-    // Refresh data if needed
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      // Load today's compulsion count and weekly average
+      const today = new Date().toDateString();
+      const entries = await AsyncStorage.getItem(`compulsions_${today}`);
+      setTodayCount(entries ? JSON.parse(entries).length : 0);
+      
+      // Calculate weekly average (mock for now)
+      setWeeklyAverage(3.2);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
   };
 
-  const renderContent = () => {
+  const handleQuickEntryComplete = () => {
+    setShowQuickEntry(false);
+    loadStats(); // Refresh stats
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const renderQuickEntry = () => (
+    <Card style={styles.quickEntryCard}>
+      <View style={styles.cardContent}>
+        <View style={styles.entryHeader}>
+          <MaterialCommunityIcons 
+            name="plus-circle" 
+            size={32} 
+            color="#10B981" 
+          />
+          <View style={styles.entryTextContainer}>
+            <Text style={styles.entryTitle}>Hızlı Kayıt</Text>
+            <Text style={styles.entrySubtitle}>
+              Kompulsiyonunu anında kaydet
+            </Text>
+          </View>
+        </View>
+        
+        <Button
+          onPress={() => setShowQuickEntry(true)}
+          style={styles.addButton}
+        >
+          <View style={styles.buttonContent}>
+            <MaterialCommunityIcons 
+              name="plus" 
+              size={20} 
+              color="#FFFFFF" 
+            />
+            <Text style={styles.buttonText}>Yeni Kayıt</Text>
+          </View>
+        </Button>
+      </View>
+    </Card>
+  );
+
+  const renderStatsOverview = () => (
+    <Card style={styles.statsCard}>
+      <View style={styles.cardContent}>
+        <Text style={styles.statsTitle}>Bugünkü Durum</Text>
+        
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{todayCount}</Text>
+            <Text style={styles.statLabel}>Bugün</Text>
+          </View>
+          
+          <View style={styles.statDivider} />
+          
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{weeklyAverage}</Text>
+            <Text style={styles.statLabel}>Haftalık Ort.</Text>
+          </View>
+        </View>
+      </View>
+    </Card>
+  );
+
+  const renderTabContent = () => {
     switch (activeTab) {
       case 'entry':
         return (
-          <Card style={styles.card} mode="elevated">
-            <Card.Content style={styles.cardContent}>
-              <View style={styles.entryHeader}>
-                <MaterialCommunityIcons name="plus-circle" size={32} color="#10B981" />
-                <View style={styles.entryTextContainer}>
-                  <Title style={styles.entryTitle}>Yeni Kayıt Ekle</Title>
-                  <Title style={styles.entrySubtitle}>
-                    Kompülsiyonunuzu hızlıca kaydedin
-                  </Title>
-                </View>
-              </View>
-              <Button
-                mode="contained"
-                icon="plus"
-                onPress={() => setShowQuickEntry(true)}
-                style={styles.addButton}
-                contentStyle={styles.buttonContent}
-              >
-                Kayıt Başlat
-              </Button>
-            </Card.Content>
-          </Card>
+          <View style={styles.tabContent}>
+            {renderQuickEntry()}
+            {renderStatsOverview()}
+          </View>
         );
+      
       case 'history':
-        return <CompulsionHistory />;
+        return (
+          <View style={styles.tabContent}>
+            <CompulsionHistory />
+          </View>
+        );
+      
       case 'stats':
-        return <CompulsionStats />;
+        return (
+          <View style={styles.tabContent}>
+            <CompulsionStats />
+          </View>
+        );
+      
       default:
-        return null;
+        return renderQuickEntry();
     }
   };
 
   return (
-    <ScreenLayout scrollable={false} backgroundColor="#FAFAFA">
-      <View style={styles.container}>
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>OKB Takibi</Text>
+          <Text style={styles.headerSubtitle}>
+            Kompulsiyonlarını kaydet ve takip et
+          </Text>
+        </View>
+
         {/* Tab Navigation */}
-        <View style={styles.tabContainer}>
+        <View style={[styles.tabContainer, styles.segmentedButtons]}>
           <SegmentedButtons
-            value={activeTab}
-            onValueChange={setActiveTab}
-            buttons={[
+            selectedValue={activeTab}
+            onSelectionChange={handleTabChange}
+            options={[
               {
                 value: 'entry',
                 label: 'Kayıt',
@@ -82,151 +185,148 @@ export default function TrackingScreen() {
                 icon: 'chart-line',
               },
             ]}
-            style={styles.segmentedControl}
           />
         </View>
 
-        {/* Content Area */}
-        <ScrollView style={styles.contentArea} showsVerticalScrollIndicator={false}>
-          {renderContent()}
-        </ScrollView>
+        {/* Tab Content */}
+        {renderTabContent()}
+      </ScrollView>
 
-        {/* Master Prompt: Floating Action Button (FAB) - Merkezde ➕ ikonu */}
-        <FAB
-          icon="plus"
-          style={styles.fab}
-          onPress={() => setShowQuickEntry(true)}
-          color="#FFFFFF"
-          customSize={56}
+      {/* Bottom Sheet for Quick Entry */}
+      <BottomSheet
+        isVisible={showQuickEntry}
+        onClose={() => setShowQuickEntry(false)}
+      >
+        <CompulsionQuickEntry
+          onSave={handleQuickEntryComplete}
+          onCancel={() => setShowQuickEntry(false)}
         />
-
-        {/* Master Prompt: FAB for quick access */}
-        <FloatingActionButton
-          onPress={() => setShowQuickEntry(true)}
-          icon="plus"
-        />
-
-        {/* Master Prompt: BottomSheet for Yolculuk #3 */}
-        <BottomSheet
-          isVisible={showQuickEntry}
-          onClose={() => setShowQuickEntry(false)}
-        >
-          <CompulsionQuickEntry
-            onSave={handleEntrySubmit}
-            onCancel={() => setShowQuickEntry(false)}
-          />
-        </BottomSheet>
-      </View>
-    </ScreenLayout>
+      </BottomSheet>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F3F4F6',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#111827',
+    fontFamily: 'Inter',
+  },
+  headerSubtitle: {
+    fontSize: 15,
+    color: '#6B7280',
+    marginTop: 4,
+    fontFamily: 'Inter',
   },
   tabContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 16,
+  },
+  segmentedButtons: {
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
-  segmentedControl: {
-    backgroundColor: '#F3F4F6',
+  tabContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 32,
   },
-  contentArea: {
-    flex: 1,
-    paddingTop: 16,
+  quickEntryCard: {
+    marginBottom: 16,
   },
-  card: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#FFFFFF',
+  statsCard: {
+    marginBottom: 16,
   },
   cardContent: {
-    paddingVertical: 24,
+    padding: 20,
   },
   entryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   entryTextContainer: {
-    marginLeft: 16,
+    marginLeft: 12,
     flex: 1,
   },
   entryTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    fontFamily: 'Inter',
   },
   entrySubtitle: {
     fontSize: 14,
     color: '#6B7280',
-    fontWeight: '400',
+    marginTop: 2,
+    fontFamily: 'Inter',
   },
   addButton: {
     backgroundColor: '#10B981',
     borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonContent: {
-    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  bottomSheetOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 1000,
-    justifyContent: 'flex-end',
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+    fontFamily: 'Inter',
   },
-  bottomSheetBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  statsTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 16,
+    fontFamily: 'Inter',
   },
-  bottomSheetContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '85%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: -4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  bottomSheetHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#D1D5DB',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginTop: 8,
-    marginBottom: 8,
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
   },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    backgroundColor: '#10B981',
-    borderRadius: 28,
-    elevation: 8,
-    shadowColor: '#10B981',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+  statNumber: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#10B981',
+    fontFamily: 'Inter',
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 4,
+    fontFamily: 'Inter',
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#E5E7EB',
+    marginHorizontal: 20,
   },
 });
