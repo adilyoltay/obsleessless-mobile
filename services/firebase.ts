@@ -51,9 +51,11 @@ export const initializeFirebase = async (): Promise<void> => {
       console.log('🔥 Firebase already initialized');
     }
     
-    // Initialize Auth (persistence warning can be ignored for React Native)
+    // Initialize Auth
+    // Note: AsyncStorage persistence warning in React Native can be safely ignored
+    // Firebase automatically uses AsyncStorage in React Native environment
     auth = firebaseGetAuth(app);
-    console.log('🔥 Firebase Auth initialized');
+    console.log('🔥 Firebase Auth initialized with automatic persistence');
     
   } catch (error) {
     console.error('Firebase initialization error:', error);

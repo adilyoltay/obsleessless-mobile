@@ -15,7 +15,7 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { queryClient } from '@/lib/queryClient';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { NavigationGuard } from '@/components/navigation/NavigationGuard';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.

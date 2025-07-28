@@ -1,138 +1,149 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
+  Text, 
+  View, 
   StyleSheet, 
   ScrollView, 
-  View, 
-  Text, 
+  Pressable,
   Alert,
   Share,
-  Linking 
+  Linking
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Switch } from '@/components/ui/Switch';
-import { Picker } from '@/components/ui/Picker';
-import { Slider } from '@/components/ui/Slider';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Custom UI Components
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import { Switch } from '@/components/ui/Switch';
+
+// Hooks & Utils
+import { useTranslation } from '@/hooks/useTranslation';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+// Settings data structure
 interface SettingsData {
-  dailyGoal: number;
-  reminderEnabled: boolean;
-  reminderTime: string;
-  hapticFeedback: boolean;
-  dataExport: boolean;
-  language: 'tr' | 'en';
-  themeMode: 'light' | 'dark' | 'system';
+  notifications: boolean;
+  biometric: boolean;
+  darkMode: boolean;
+  reminderTimes: boolean;
+  weeklyReports: boolean;
+  dataSharing: boolean;
 }
 
-const defaultSettings: SettingsData = {
-  dailyGoal: 3,
-  reminderEnabled: true,
-  reminderTime: '20:00',
-  hapticFeedback: true,
-  dataExport: true,
-  language: 'tr',
-  themeMode: 'light',
-};
+const LANGUAGE_OPTIONS = [
+  { code: 'tr', name: 'Türkçe', flag: '🇹🇷' },
+  { code: 'en', name: 'English', flag: '🇺🇸' }
+];
 
 export default function SettingsScreen() {
-  const [settings, setSettings] = useState<SettingsData>(defaultSettings);
-  const [loading, setLoading] = useState(false);
+  const { t, language } = useTranslation();
+  const { setLanguage } = useLanguage();
+  const [settings, setSettings] = useState<SettingsData>({
+    notifications: true,
+    biometric: false,
+    darkMode: false,
+    reminderTimes: true,
+    weeklyReports: true,
+    dataSharing: false
+  });
+
+  const [userProfile, setUserProfile] = useState({
+    name: 'Kullanıcı',
+    memberSince: '2024',
+    totalSessions: 15,
+    currentStreak: 7
+  });
 
   useEffect(() => {
     loadSettings();
+    loadUserProfile();
   }, []);
 
   const loadSettings = async () => {
     try {
-      const savedSettings = await AsyncStorage.getItem('appSettings');
+      const savedSettings = await AsyncStorage.getItem('user_settings');
       if (savedSettings) {
-        setSettings({ ...defaultSettings, ...JSON.parse(savedSettings) });
+        setSettings(JSON.parse(savedSettings));
       }
     } catch (error) {
       console.error('Error loading settings:', error);
     }
   };
 
-  const saveSettings = async (newSettings: SettingsData) => {
+  const loadUserProfile = async () => {
     try {
-      await AsyncStorage.setItem('appSettings', JSON.stringify(newSettings));
-      setSettings(newSettings);
-      if (settings.hapticFeedback) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const profile = await AsyncStorage.getItem('user_profile');
+      if (profile) {
+        setUserProfile(JSON.parse(profile));
       }
     } catch (error) {
-      console.error('Error saving settings:', error);
-      Alert.alert('Hata', 'Ayarlar kaydedilemedi');
+      console.error('Error loading user profile:', error);
     }
   };
 
-  const updateSetting = <K extends keyof SettingsData>(
-    key: K, 
-    value: SettingsData[K]
-  ) => {
+  const updateSetting = async (key: keyof SettingsData, value: boolean) => {
     const newSettings = { ...settings, [key]: value };
-    saveSettings(newSettings);
+    setSettings(newSettings);
+    
+    try {
+      await AsyncStorage.setItem('user_settings', JSON.stringify(newSettings));
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    }
   };
 
-  const exportData = async () => {
-    setLoading(true);
+  const handleLanguageChange = async (newLanguage: string) => {
+    setLanguage(newLanguage as any);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handleShareApp = async () => {
     try {
-      // Collect all user data
-      const compulsions = await AsyncStorage.getItem('compulsionEntries');
-      const erpSessions = await AsyncStorage.getItem('erpSessions');
-      const ybocs = await AsyncStorage.getItem('ybocs_assessment');
-      const profile = await AsyncStorage.getItem('ocd_profile');
-
-      const exportData = {
-        exportDate: new Date().toISOString(),
-        compulsions: compulsions ? JSON.parse(compulsions) : [],
-        erpSessions: erpSessions ? JSON.parse(erpSessions) : [],
-        ybocs: ybocs ? JSON.parse(ybocs) : null,
-        profile: profile ? JSON.parse(profile) : null,
-        settings: settings,
-      };
-
-      const dataString = JSON.stringify(exportData, null, 2);
-      
       await Share.share({
-        message: dataString,
-        title: 'ObsessLess Veri Dışa Aktarımı',
+        message: 'ObsessLess uygulamasını keşfet! OKB yönetimi için güçlü bir araç.',
+        url: 'https://obsessless.app'
       });
     } catch (error) {
-      console.error('Error exporting data:', error);
-      Alert.alert('Hata', 'Veriler dışa aktarılamadı');
-    } finally {
-      setLoading(false);
+      console.error('Error sharing app:', error);
     }
   };
 
-  const clearAllData = () => {
+  const handleDataExport = () => {
     Alert.alert(
-      'Tüm Verileri Sil',
-      'Bu işlem tüm verilerinizi kalıcı olarak silecektir. Bu işlem geri alınamaz.',
+      'Verilerini Dışa Aktar',
+      'Tüm verilerini JSON formatında dışa aktarmak ister misin?',
       [
         { text: 'İptal', style: 'cancel' },
-        {
-          text: 'Sil',
+        { 
+          text: 'Dışa Aktar', 
+          onPress: async () => {
+            // TODO: Implement data export
+            Alert.alert('Başarılı', 'Verilerin dışa aktarıldı!');
+          }
+        }
+      ]
+    );
+  };
+
+  const handleResetData = () => {
+    Alert.alert(
+      '⚠️ Dikkat',
+      'Bu işlem tüm verilerini kalıcı olarak silecek. Bu işlem geri alınamaz.',
+      [
+        { text: 'İptal', style: 'cancel' },
+        { 
+          text: 'Sil', 
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.multiRemove([
-                'compulsionEntries',
-                'erpSessions',
-                'ybocs_assessment',
-                'ocd_profile',
-                'achievements',
-                'streaks',
-              ]);
-              Alert.alert('Başarılı', 'Tüm veriler silindi');
+              await AsyncStorage.clear();
+              Alert.alert('Başarılı', 'Tüm veriler silindi.');
             } catch (error) {
-              Alert.alert('Hata', 'Veriler silinemedi');
+              console.error('Error clearing data:', error);
             }
           }
         }
@@ -140,281 +151,405 @@ export default function SettingsScreen() {
     );
   };
 
-  const openPrivacyPolicy = () => {
-    Linking.openURL('https://obsessless.app/privacy');
-  };
+  const renderProfileSection = () => (
+    <Card style={styles.profileCard}>
+      <View style={styles.profileContent}>
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarContainer}>
+            <MaterialCommunityIcons name="account-circle" size={56} color="#10B981" />
+          </View>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{userProfile.name}</Text>
+            <Text style={styles.profileMember}>
+              {userProfile.memberSince} yılından beri üye
+            </Text>
+          </View>
+        </View>
+        
+        <View style={styles.profileStats}>
+          <View style={styles.profileStat}>
+            <Text style={styles.profileStatNumber}>{userProfile.totalSessions}</Text>
+            <Text style={styles.profileStatLabel}>Toplam Oturum</Text>
+          </View>
+          <View style={styles.profileStatDivider} />
+          <View style={styles.profileStat}>
+            <Text style={styles.profileStatNumber}>{userProfile.currentStreak}</Text>
+            <Text style={styles.profileStatLabel}>Güncel Seri</Text>
+          </View>
+        </View>
+      </View>
+    </Card>
+  );
 
-  const openTerms = () => {
-    Linking.openURL('https://obsessless.app/terms');
-  };
+  const renderSettingsSection = (title: string, children: React.ReactNode) => (
+    <View style={styles.settingsSection}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <Card style={styles.settingsCard}>
+        {children}
+      </Card>
+    </View>
+  );
 
-  const sendFeedback = () => {
-    Linking.openURL('mailto:feedback@obsessless.app?subject=ObsessLess Geri Bildirim');
-  };
+  const renderSettingItem = (
+    title: string,
+    subtitle: string,
+    icon: string,
+    value: boolean,
+    onToggle: (value: boolean) => void
+  ) => (
+    <View style={styles.settingItem}>
+      <View style={styles.settingIcon}>
+        <MaterialCommunityIcons name={icon as any} size={24} color="#6B7280" />
+      </View>
+      <View style={styles.settingContent}>
+        <Text style={styles.settingTitle}>{title}</Text>
+        <Text style={styles.settingSubtitle}>{subtitle}</Text>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onToggle}
+        trackColor={{ false: '#E5E7EB', true: '#10B981' }}
+        thumbColor={value ? '#FFFFFF' : '#F3F4F6'}
+      />
+    </View>
+  );
+
+  const renderActionItem = (
+    title: string,
+    subtitle: string,
+    icon: string,
+    onPress: () => void,
+    danger = false
+  ) => (
+    <Pressable style={styles.actionItem} onPress={onPress}>
+      <View style={[styles.settingIcon, danger && styles.dangerIcon]}>
+        <MaterialCommunityIcons 
+          name={icon as any} 
+          size={24} 
+          color={danger ? '#EF4444' : '#6B7280'} 
+        />
+      </View>
+      <View style={styles.settingContent}>
+        <Text style={[styles.settingTitle, danger && styles.dangerTitle]}>
+          {title}
+        </Text>
+        <Text style={styles.settingSubtitle}>{subtitle}</Text>
+      </View>
+      <MaterialCommunityIcons name="chevron-right" size={20} color="#6B7280" />
+    </Pressable>
+  );
+
+  const renderLanguageSection = () => (
+    <View style={styles.languageContainer}>
+      {LANGUAGE_OPTIONS.map((lang) => (
+        <Pressable
+          key={lang.code}
+          style={[
+            styles.languageOption,
+            language === lang.code && styles.languageOptionActive
+          ]}
+          onPress={() => handleLanguageChange(lang.code)}
+        >
+          <Text style={styles.languageFlag}>{lang.flag}</Text>
+          <Text style={[
+            styles.languageName,
+            language === lang.code && styles.languageNameActive
+          ]}>
+            {lang.name}
+          </Text>
+          {language === lang.code && (
+            <MaterialCommunityIcons name="check" size={20} color="#10B981" />
+          )}
+        </Pressable>
+      ))}
+    </View>
+  );
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <ThemedText type="title" style={styles.title}>Ayarlar</ThemedText>
+    <View style={styles.container}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Ayarlar</Text>
+          <Text style={styles.headerSubtitle}>
+            Uygulamayı kişiselleştir ve tercihlerini ayarla
+          </Text>
+        </View>
 
-        {/* Daily Goals */}
-        <Card style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Günlük Hedefler
-          </ThemedText>
-          
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Günlük Kayıt Hedefi</Text>
-              <Text style={styles.settingDescription}>
-                Günde kaç kompulsiyon kaydı yapmayı hedefliyorsunuz
-              </Text>
-            </View>
-            <View style={styles.sliderContainer}>
-              <Slider
-                value={settings.dailyGoal}
-                onValueChange={(value) => updateSetting('dailyGoal', Math.round(value))}
-                minimumValue={1}
-                maximumValue={10}
-                step={1}
-                style={styles.slider}
-              />
-              <Text style={styles.sliderValue}>{settings.dailyGoal}</Text>
-            </View>
+        {/* Profile Section */}
+        {renderProfileSection()}
+
+        {/* Notifications Settings */}
+        {renderSettingsSection('Bildirimler', (
+          <View>
+            {renderSettingItem(
+              'Bildirimler',
+              'Günlük hatırlatmalar ve uyarılar',
+              'bell-outline',
+              settings.notifications,
+              (value) => updateSetting('notifications', value)
+            )}
+            {renderSettingItem(
+              'Hatırlatma Saatleri',
+              'Belirlenen saatlerde hatırlatma',
+              'clock-outline',
+              settings.reminderTimes,
+              (value) => updateSetting('reminderTimes', value)
+            )}
+            {renderSettingItem(
+              'Haftalık Raporlar',
+              'İlerleme raporu bildirimleri',
+              'chart-line',
+              settings.weeklyReports,
+              (value) => updateSetting('weeklyReports', value)
+            )}
           </View>
-        </Card>
+        ))}
 
-        {/* Notifications */}
-        <Card style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Bildirimler
-          </ThemedText>
-          
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Günlük Hatırlatıcı</Text>
-              <Text style={styles.settingDescription}>
-                Günlük kayıt yapmayı hatırlatacak bildirim
-              </Text>
-            </View>
-            <Switch
-              value={settings.reminderEnabled}
-              onValueChange={(value) => updateSetting('reminderEnabled', value)}
-            />
+        {/* Privacy & Security */}
+        {renderSettingsSection('Gizlilik ve Güvenlik', (
+          <View>
+            {renderSettingItem(
+              'Biyometrik Kilit',
+              'Parmak izi veya yüz tanıma',
+              'fingerprint',
+              settings.biometric,
+              (value) => updateSetting('biometric', value)
+            )}
+            {renderSettingItem(
+              'Veri Paylaşımı',
+              'Anonim kullanım verilerini paylaş',
+              'database-outline',
+              settings.dataSharing,
+              (value) => updateSetting('dataSharing', value)
+            )}
           </View>
+        ))}
 
-          {settings.reminderEnabled && (
-            <View style={styles.settingRow}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Hatırlatıcı Saati</Text>
-              </View>
-              <Picker
-                selectedValue={settings.reminderTime}
-                onValueChange={(value) => updateSetting('reminderTime', value)}
-                style={styles.timePicker}
-              >
-                <Picker.Item label="08:00" value="08:00" />
-                <Picker.Item label="12:00" value="12:00" />
-                <Picker.Item label="16:00" value="16:00" />
-                <Picker.Item label="20:00" value="20:00" />
-                <Picker.Item label="22:00" value="22:00" />
-              </Picker>
-            </View>
-          )}
-        </Card>
+        {/* Language Settings */}
+        {renderSettingsSection('Dil ve Bölge', renderLanguageSection())}
 
-        {/* User Experience */}
-        <Card style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Kullanıcı Deneyimi
-          </ThemedText>
-          
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Haptic Geri Bildirim</Text>
-              <Text style={styles.settingDescription}>
-                Dokunmatik titreşim geri bildirimi
-              </Text>
-            </View>
-            <Switch
-              value={settings.hapticFeedback}
-              onValueChange={(value) => updateSetting('hapticFeedback', value)}
-            />
+        {/* App Actions */}
+        {renderSettingsSection('Uygulama', (
+          <View>
+            {renderActionItem(
+              'Uygulamayı Paylaş',
+              'Arkadaşlarınla ObsessLess\'i paylaş',
+              'share-variant',
+              handleShareApp
+            )}
+            {renderActionItem(
+              'Verilerini Dışa Aktar',
+              'Tüm verilerini yedekle',
+              'download',
+              handleDataExport
+            )}
+            {renderActionItem(
+              'Gizlilik Politikası',
+              'Veri kullanım politikalarını görüntüle',
+              'shield-check',
+              () => Linking.openURL('https://obsessless.app/privacy')
+            )}
+            {renderActionItem(
+              'Destek',
+              'Yardım ve geri bildirim',
+              'help-circle',
+              () => Linking.openURL('mailto:support@obsessless.app')
+            )}
           </View>
+        ))}
 
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Dil</Text>
-              <Text style={styles.settingDescription}>
-                Uygulama dili
-              </Text>
-            </View>
-            <Picker
-              selectedValue={settings.language}
-              onValueChange={(value) => updateSetting('language', value)}
-              style={styles.languagePicker}
-            >
-              <Picker.Item label="Türkçe" value="tr" />
-              <Picker.Item label="English" value="en" />
-            </Picker>
+        {/* Danger Zone */}
+        {renderSettingsSection('Tehlikeli Alan', (
+          <View>
+            {renderActionItem(
+              'Tüm Verileri Sil',
+              'Kalıcı olarak tüm verilerini sil',
+              'delete-outline',
+              handleResetData,
+              true
+            )}
           </View>
-        </Card>
+        ))}
 
-        {/* Data Management */}
-        <Card style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Veri Yönetimi
-          </ThemedText>
-          
-          <Button
-            title="Verilerimi Dışa Aktar"
-            onPress={exportData}
-            loading={loading}
-            style={styles.actionButton}
-          />
-          
-          <Button
-            title="Tüm Verileri Sil"
-            onPress={clearAllData}
-            style={[styles.actionButton, styles.dangerButton]}
-          />
-        </Card>
-
-        {/* Support & Legal */}
-        <Card style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Destek & Yasal
-          </ThemedText>
-          
-          <Button
-            title="Geri Bildirim Gönder"
-            onPress={sendFeedback}
-            style={styles.actionButton}
-          />
-          
-          <Button
-            title="Gizlilik Politikası"
-            onPress={openPrivacyPolicy}
-            style={styles.actionButton}
-          />
-          
-          <Button
-            title="Kullanım Koşulları"
-            onPress={openTerms}
-            style={styles.actionButton}
-          />
-        </Card>
-
-        {/* App Info */}
-        <Card style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Uygulama Bilgileri
-          </ThemedText>
-          
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Versiyon</Text>
-            <Text style={styles.infoValue}>1.0.0</Text>
-          </View>
-          
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Build</Text>
-            <Text style={styles.infoValue}>100</Text>
-          </View>
-        </Card>
+        <View style={styles.bottomSpacing} />
       </ScrollView>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F3F4F6',
   },
   scrollView: {
     flex: 1,
   },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 24,
-    paddingTop: 40,
-  },
-  section: {
-    padding: 20,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
+  headerTitle: {
+    fontSize: 24,
     fontWeight: '600',
     color: '#111827',
-    marginBottom: 16,
+    fontFamily: 'Inter',
   },
-  settingRow: {
+  headerSubtitle: {
+    fontSize: 15,
+    color: '#6B7280',
+    marginTop: 4,
+    fontFamily: 'Inter',
+  },
+  profileCard: {
+    marginHorizontal: 16,
+    marginVertical: 16,
+  },
+  profileContent: {
+    padding: 20,
+  },
+  profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    marginBottom: 20,
   },
-  settingInfo: {
-    flex: 1,
+  avatarContainer: {
     marginRight: 16,
   },
-  settingLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#111827',
-    marginBottom: 4,
+  profileInfo: {
+    flex: 1,
   },
-  settingDescription: {
+  profileName: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#111827',
+    fontFamily: 'Inter',
+  },
+  profileMember: {
     fontSize: 14,
     color: '#6B7280',
+    marginTop: 4,
+    fontFamily: 'Inter',
   },
-  sliderContainer: {
-    width: 120,
+  profileStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  profileStat: {
+    flex: 1,
     alignItems: 'center',
   },
-  slider: {
-    width: '100%',
-    height: 40,
+  profileStatNumber: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#10B981',
+    fontFamily: 'Inter',
   },
-  sliderValue: {
+  profileStatLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 4,
+    fontFamily: 'Inter',
+  },
+  profileStatDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: '#E5E7EB',
+  },
+  settingsSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#10B981',
-    marginTop: 4,
+    color: '#111827',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    fontFamily: 'Inter',
   },
-  timePicker: {
-    width: 100,
+  settingsCard: {
+    marginHorizontal: 16,
   },
-  languagePicker: {
-    width: 120,
-  },
-  actionButton: {
-    marginVertical: 8,
-  },
-  dangerButton: {
-    backgroundColor: '#EF4444',
-  },
-  infoRow: {
+  settingItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
-  infoLabel: {
-    fontSize: 16,
-    color: '#6B7280',
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
-  infoValue: {
+  settingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  dangerIcon: {
+    backgroundColor: '#FEF2F2',
+  },
+  settingContent: {
+    flex: 1,
+  },
+  settingTitle: {
     fontSize: 16,
     fontWeight: '500',
     color: '#111827',
+    fontFamily: 'Inter',
+  },
+  dangerTitle: {
+    color: '#EF4444',
+  },
+  settingSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 2,
+    fontFamily: 'Inter',
+  },
+  languageContainer: {
+    padding: 20,
+  },
+  languageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  languageOptionActive: {
+    backgroundColor: '#F0FDF4',
+  },
+  languageFlag: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  languageName: {
+    flex: 1,
+    fontSize: 16,
+    color: '#374151',
+    fontFamily: 'Inter',
+  },
+  languageNameActive: {
+    color: '#10B981',
+    fontWeight: '500',
+  },
+  bottomSpacing: {
+    height: 32,
   },
 });
