@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Card, Text, Button, ProgressBar, Chip } from 'react-native-paper';
@@ -46,7 +45,7 @@ export function ERPTimer({
   const [resistanceCount, setResistanceCount] = useState(0);
   const [phase, setPhase] = useState<'setup' | 'running' | 'completed'>('setup');
   const [lastAnxietyCheck, setLastAnxietyCheck] = useState(Date.now());
-  
+
   const intervalRef = useRef<NodeJS.Timeout>();
   const anxietyHistoryRef = useRef<Array<{time: number, level: number}>>([]);
 
@@ -119,7 +118,7 @@ export function ERPTimer({
   const completeSession = async () => {
     setIsRunning(false);
     setPhase('completed');
-    
+
     const session: ERPSession = {
       id: Date.now().toString(),
       exerciseId,
@@ -161,7 +160,7 @@ export function ERPTimer({
         <Card.Content>
           <Text style={styles.title}>{exerciseName}</Text>
           <Text style={styles.description}>{exerciseDescription}</Text>
-          
+
           <View style={styles.setupSection}>
             <Text style={styles.sectionTitle}>{t('erp.targetDuration')}</Text>
             <Slider
@@ -235,7 +234,7 @@ export function ERPTimer({
                 {t('erp.current')}: {currentAnxiety}/10
               </Chip>
             </View>
-            
+
             <Slider
               value={currentAnxiety}
               onValueChange={handleAnxietyUpdate}
