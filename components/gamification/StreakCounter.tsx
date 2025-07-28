@@ -1,7 +1,6 @@
 
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Card, Text, ProgressBar, Chip } from 'react-native-paper';
+import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface StreakData {
@@ -18,269 +17,229 @@ interface StreakData {
   };
 }
 
-interface StreakLevel {
-  id: string;
-  name: string;
-  emoji: string;
-  minDays: number;
-  maxDays: number;
-  color: string[];
-  benefits: string[];
-}
-
-const STREAK_LEVELS: StreakLevel[] = [
-  {
-    id: 'beginner',
-    name: 'Başlangıç',
-    emoji: '🌱',
-    minDays: 1,
-    maxDays: 7,
-    color: ['#a8e6cf', '#88d8a3'],
-    benefits: ['İlk adımları attınız', 'Farkındalık kazanıyorsunuz']
-  },
-  {
-    id: 'warrior',
-    name: 'Savaşçı',
-    emoji: '⚔️',
-    minDays: 8,
-    maxDays: 21,
-    color: ['#ffd3a5', '#fd9853'],
-    benefits: ['Alışkanlık oluşturuyor', 'Direnç kazanıyorsunuz']
-  },
-  {
-    id: 'champion',
-    name: 'Şampiyon',
-    emoji: '🥇',
-    minDays: 22,
-    maxDays: 49,
-    color: ['#a8edea', '#fed6e3'],
-    benefits: ['Güçlü rutinler', 'Belirgin ilerleme']
-  },
-  {
-    id: 'master',
-    name: 'Usta',
-    emoji: '🏆',
-    minDays: 50,
-    maxDays: 89,
-    color: ['#ffecd2', '#fcb69f'],
-    benefits: ['Yaşam tarzı değişimi', 'Uzun süreli başarı']
-  },
-  {
-    id: 'legendary',
-    name: 'Efsanevi',
-    emoji: '👑',
-    minDays: 90,
-    maxDays: 999,
-    color: ['#667eea', '#764ba2'],
-    benefits: ['Tam yaşam dönüşümü', 'İlham verici başarı']
-  }
-];
+type StreakLevel = 'beginner' | 'motivated' | 'dedicated' | 'champion' | 'master';
 
 interface StreakCounterProps {
   data: StreakData;
   onActivityPress?: (activity: string) => void;
 }
 
+const LEVEL_COLORS = {
+  beginner: '#F59E0B',
+  motivated: '#10B981', 
+  dedicated: '#3B82F6',
+  champion: '#8B5CF6',
+  master: '#EF4444'
+};
+
+const LEVEL_NAMES = {
+  beginner: 'Başlangıç',
+  motivated: 'Motivasyonlu',
+  dedicated: 'Kararlı',
+  champion: 'Şampiyon', 
+  master: 'Usta'
+};
+
 export function StreakCounter({ data, onActivityPress }: StreakCounterProps) {
-  const { currentStreak, level, progress, nextLevelIn, activities, todayCompleted } = data;
-
-  const getActivityIcon = (activity: string, completed: boolean) => {
-    const icons = {
-      compulsionTracking: completed ? '✅' : '⏱️',
-      erpExercise: completed ? '✅' : '🛡️',
-      dailyGoal: completed ? '✅' : '🎯'
-    };
-    return icons[activity as keyof typeof icons] || '❓';
-  };
-
-  const getActivityName = (activity: string) => {
-    const names = {
-      compulsionTracking: 'Kompulsiyon Takibi',
-      erpExercise: 'ERP Egzersizi',
-      dailyGoal: 'Günlük Hedef'
-    };
-    return names[activity as keyof typeof names] || activity;
-  };
+  const levelColor = LEVEL_COLORS[data.level];
+  const levelName = LEVEL_NAMES[data.level];
 
   return (
-    <Card style={styles.container}>
+    <View style={styles.container}>
       <LinearGradient
-        colors={level.color}
-        style={styles.gradient}
+        colors={['#F0FDF4', '#DCFCE7']}
+        style={styles.card}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.emoji}>{level.emoji}</Text>
-          <View style={styles.streakInfo}>
-            <Text style={styles.streakNumber}>{currentStreak}</Text>
+          <Text style={styles.title}>🔥 Günlük Seri</Text>
+          <View style={[styles.levelBadge, { backgroundColor: levelColor + '20' }]}>
+            <Text style={[styles.levelText, { color: levelColor }]}>{levelName}</Text>
+          </View>
+        </View>
+
+        {/* Streak Numbers */}
+        <View style={styles.streakContainer}>
+          <View style={styles.streakItem}>
+            <Text style={styles.streakNumber}>{data.currentStreak}</Text>
             <Text style={styles.streakLabel}>Günlük Seri</Text>
           </View>
-          <View style={styles.levelInfo}>
-            <Text style={styles.levelName}>{level.name}</Text>
-            <Text style={styles.nextLevel}>
-              {nextLevelIn > 0 ? `${nextLevelIn} gün kaldı` : 'Maksimum seviye!'}
-            </Text>
+          <View style={styles.divider} />
+          <View style={styles.streakItem}>
+            <Text style={styles.streakNumber}>{data.longestStreak}</Text>
+            <Text style={styles.streakLabel}>En Uzun Seri</Text>
           </View>
         </View>
 
-        {nextLevelIn > 0 && (
-          <View style={styles.progressContainer}>
-            <Text style={styles.progressLabel}>Sonraki Seviyeye İlerleme</Text>
-            <ProgressBar 
-              progress={progress} 
-              style={styles.progressBar}
-              color="rgba(255,255,255,0.9)"
+        {/* Progress Bar */}
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressLabel}>
+            Sonraki seviyeye {data.nextLevelIn} gün
+          </Text>
+          <View style={styles.progressBarContainer}>
+            <View 
+              style={[
+                styles.progressBar, 
+                { 
+                  width: `${data.progress}%`,
+                  backgroundColor: levelColor 
+                }
+              ]} 
             />
           </View>
-        )}
-      </LinearGradient>
+        </View>
 
-      <Card.Content style={styles.content}>
-        <Text style={styles.todayTitle}>
-          {todayCompleted ? '🎉 Bugünün Görevleri Tamamlandı!' : '📋 Bugünün Görevleri'}
-        </Text>
-        
+        {/* Today's Activities */}
         <View style={styles.activitiesContainer}>
-          {Object.entries(activities).map(([activity, completed]) => (
-            <Chip
-              key={activity}
-              icon={() => <Text>{getActivityIcon(activity, completed)}</Text>}
-              style={[
-                styles.activityChip,
-                completed ? styles.completedActivity : styles.pendingActivity
-              ]}
-              textStyle={completed ? styles.completedText : styles.pendingText}
-              onPress={() => onActivityPress?.(activity)}
-            >
-              {getActivityName(activity)}
-            </Chip>
-          ))}
+          <Text style={styles.activitiesTitle}>Bugünkü Hedefler</Text>
+          <View style={styles.activitiesGrid}>
+            <View style={[
+              styles.activityItem,
+              data.activities.compulsionTracking && styles.activityCompleted
+            ]}>
+              <Text style={styles.activityIcon}>📊</Text>
+              <Text style={styles.activityText}>Takip</Text>
+            </View>
+            <View style={[
+              styles.activityItem,
+              data.activities.erpExercise && styles.activityCompleted
+            ]}>
+              <Text style={styles.activityIcon}>🛡️</Text>
+              <Text style={styles.activityText}>ERP</Text>
+            </View>
+            <View style={[
+              styles.activityItem,
+              data.activities.dailyGoal && styles.activityCompleted
+            ]}>
+              <Text style={styles.activityIcon}>🎯</Text>
+              <Text style={styles.activityText}>Hedef</Text>
+            </View>
+          </View>
         </View>
-
-        <View style={styles.benefitsContainer}>
-          <Text style={styles.benefitsTitle}>🌟 Seviye Faydaları</Text>
-          {level.benefits.map((benefit, index) => (
-            <Text key={index} style={styles.benefit}>
-              • {benefit}
-            </Text>
-          ))}
-        </View>
-      </Card.Content>
-    </Card>
+      </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
-    overflow: 'hidden',
+    marginVertical: 8,
   },
-  gradient: {
+  card: {
+    borderRadius: 16,
     padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
   },
-  emoji: {
-    fontSize: 48,
-    marginRight: 16,
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    fontFamily: 'Inter',
   },
-  streakInfo: {
+  levelBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  levelText: {
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: 'Inter',
+  },
+  streakContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  streakItem: {
     flex: 1,
     alignItems: 'center',
   },
   streakNumber: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: 'white',
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    color: '#10B981',
+    fontFamily: 'Inter',
   },
   streakLabel: {
     fontSize: 14,
-    color: 'white',
-    fontWeight: '600',
-    opacity: 0.9,
+    color: '#6B7280',
+    marginTop: 4,
+    fontFamily: 'Inter',
   },
-  levelInfo: {
-    alignItems: 'flex-end',
-  },
-  levelName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  nextLevel: {
-    fontSize: 12,
-    color: 'white',
-    opacity: 0.8,
+  divider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#D1D5DB',
+    marginHorizontal: 16,
   },
   progressContainer: {
-    marginTop: 8,
+    marginBottom: 20,
   },
   progressLabel: {
-    fontSize: 12,
-    color: 'white',
-    marginBottom: 4,
-    opacity: 0.9,
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 8,
+    fontFamily: 'Inter',
+  },
+  progressBarContainer: {
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    overflow: 'hidden',
   },
   progressBar: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-  },
-  content: {
-    paddingTop: 16,
-  },
-  todayTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    textAlign: 'center',
+    height: '100%',
+    borderRadius: 4,
   },
   activitiesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    marginBottom: 16,
+    marginTop: 4,
   },
-  activityChip: {
-    marginVertical: 4,
-    marginHorizontal: 2,
-  },
-  completedActivity: {
-    backgroundColor: '#d4edda',
-  },
-  pendingActivity: {
-    backgroundColor: '#f8f9fa',
-  },
-  completedText: {
-    color: '#155724',
-  },
-  pendingText: {
-    color: '#6c757d',
-  },
-  benefitsContainer: {
-    backgroundColor: '#f8f9fa',
-    padding: 12,
-    borderRadius: 8,
-  },
-  benefitsTitle: {
-    fontSize: 14,
+  activitiesTitle: {
+    fontSize: 16,
     fontWeight: '600',
-    marginBottom: 8,
+    color: '#111827',
+    marginBottom: 12,
+    fontFamily: 'Inter',
   },
-  benefit: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#495057',
-    marginBottom: 2,
+  activitiesGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  activityItem: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    marginHorizontal: 4,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  activityCompleted: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#10B981',
+  },
+  activityIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  activityText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#374151',
+    fontFamily: 'Inter',
   },
 });
