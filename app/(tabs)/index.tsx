@@ -13,9 +13,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// React Native Paper Components
+import { Card, Button } from 'react-native-paper';
+
 // Custom UI Components
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 
 // Feature Components  
@@ -183,7 +184,7 @@ export default function TodayScreen() {
 
     return (
       <Card style={styles.streakCard}>
-        <View style={styles.streakContent}>
+        <Card.Content style={styles.streakContent}>
           <StreakCounter 
             data={streakData}
             onActivityPress={(activity) => {
@@ -193,14 +194,14 @@ export default function TodayScreen() {
               }
             }}
           />
-        </View>
+        </Card.Content>
       </Card>
     );
   };
 
   const renderDailySummary = () => (
     <Card style={styles.summaryCard}>
-      <View style={styles.summaryContent}>
+      <Card.Content style={styles.summaryContent}>
         <Text style={styles.summaryTitle}>Bugünkü Özet</Text>
         
         <View style={styles.metricsRow}>
@@ -228,7 +229,7 @@ export default function TodayScreen() {
             <Text style={styles.metricLabel}>Ruh Hali</Text>
           </View>
         </View>
-      </View>
+      </Card.Content>
     </Card>
   );
 
@@ -264,10 +265,11 @@ export default function TodayScreen() {
 
   const renderAchievementsPanel = () => (
     <Card style={styles.achievementsCard}>
-      <Pressable 
-        style={styles.achievementsHeader}
-        onPress={toggleAchievements}
-      >
+      <Card.Content>
+        <Pressable 
+          style={styles.achievementsHeader}
+          onPress={toggleAchievements}
+        >
         <View style={styles.achievementsHeaderContent}>
           <MaterialCommunityIcons 
             name="trophy" 
@@ -288,6 +290,7 @@ export default function TodayScreen() {
           <AchievementSystem />
         </View>
       )}
+      </Card.Content>
     </Card>
   );
 

@@ -12,11 +12,12 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// React Native Paper Components
+import { Card, Button, FAB } from 'react-native-paper';
+
 // Custom UI Components
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import { SegmentedButtons } from '@/components/ui/SegmentedButtons';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { SegmentedButtons } from '@/components/ui/SegmentedButtons';
 
 // Feature Components
 import { CompulsionQuickEntry } from '@/components/forms/CompulsionQuickEntry';
@@ -66,7 +67,7 @@ export default function TrackingScreen() {
 
   const renderQuickEntry = () => (
     <Card style={styles.quickEntryCard}>
-      <View style={styles.cardContent}>
+      <Card.Content style={styles.cardContent}>
         <View style={styles.entryHeader}>
           <MaterialCommunityIcons 
             name="plus-circle" 
@@ -94,13 +95,13 @@ export default function TrackingScreen() {
             <Text style={styles.buttonText}>Yeni Kayıt</Text>
           </View>
         </Button>
-      </View>
+      </Card.Content>
     </Card>
   );
 
   const renderStatsOverview = () => (
     <Card style={styles.statsCard}>
-      <View style={styles.cardContent}>
+      <Card.Content style={styles.cardContent}>
         <Text style={styles.statsTitle}>Bugünkü Durum</Text>
         
         <View style={styles.statsRow}>
@@ -116,7 +117,7 @@ export default function TrackingScreen() {
             <Text style={styles.statLabel}>Haftalık Ort.</Text>
           </View>
         </View>
-      </View>
+      </Card.Content>
     </Card>
   );
 
@@ -191,6 +192,18 @@ export default function TrackingScreen() {
         {/* Tab Content */}
         {renderTabContent()}
       </ScrollView>
+
+      {/* Floating Action Button - Master Prompt Quick Entry */}
+      <FAB
+        icon="plus"
+        style={styles.fab}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setShowQuickEntry(true);
+        }}
+        label="Hızlı Kayıt"
+        variant="primary"
+      />
 
       {/* Bottom Sheet for Quick Entry */}
       <BottomSheet
@@ -328,5 +341,12 @@ const styles = StyleSheet.create({
     height: 40,
     backgroundColor: '#E5E7EB',
     marginHorizontal: 20,
+  },
+  fab: {
+    position: 'absolute',
+    margin: 16,
+    right: 0,
+    bottom: 100, // Above bottom sheet area
+    backgroundColor: '#10B981', // Master Prompt primary color
   },
 });

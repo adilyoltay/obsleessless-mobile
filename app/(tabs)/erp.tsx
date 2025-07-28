@@ -13,9 +13,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// React Native Paper Components
+import { Card, Button } from 'react-native-paper';
+
 // Custom UI Components
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
 import { Slider } from '@/components/ui/Slider';
 
 // Feature Components
@@ -214,7 +215,7 @@ export default function ERPScreen() {
       
       {ERP_CATEGORIES.map((category) => (
         <Card key={category.id} style={styles.categoryCard}>
-          <View style={styles.categoryContent}>
+          <Card.Content style={styles.categoryContent}>
             <View style={styles.categoryHeader}>
               <View style={[styles.categoryIcon, { backgroundColor: `${category.color}20` }]}>
                 <MaterialCommunityIcons 
@@ -243,7 +244,7 @@ export default function ERPScreen() {
                 </Pressable>
               ))}
             </View>
-          </View>
+          </Card.Content>
         </Card>
       ))}
     </ScrollView>

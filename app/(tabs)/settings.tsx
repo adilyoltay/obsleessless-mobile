@@ -14,10 +14,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Custom UI Components
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import { Switch } from '@/components/ui/Switch';
+// React Native Paper Components
+import { Card, Button, Switch } from 'react-native-paper';
+
+// Custom UI Components (if needed)
 
 // Hooks & Utils
 import { useTranslation } from '@/hooks/useTranslation';
@@ -153,7 +153,7 @@ export default function SettingsScreen() {
 
   const renderProfileSection = () => (
     <Card style={styles.profileCard}>
-      <View style={styles.profileContent}>
+      <Card.Content style={styles.profileContent}>
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <MaterialCommunityIcons name="account-circle" size={56} color="#10B981" />
@@ -177,7 +177,7 @@ export default function SettingsScreen() {
             <Text style={styles.profileStatLabel}>Güncel Seri</Text>
           </View>
         </View>
-      </View>
+      </Card.Content>
     </Card>
   );
 
@@ -185,7 +185,9 @@ export default function SettingsScreen() {
     <View style={styles.settingsSection}>
       <Text style={styles.sectionTitle}>{title}</Text>
       <Card style={styles.settingsCard}>
-        {children}
+        <Card.Content>
+          {children}
+        </Card.Content>
       </Card>
     </View>
   );
