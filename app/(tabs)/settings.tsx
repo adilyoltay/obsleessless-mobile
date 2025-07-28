@@ -1,25 +1,5 @@
 
-<old_str>import { StyleSheet } from 'react-native';
-
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-
-export default function SettingsScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title">Settings</ThemedText>
-    </ThemedView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});</old_str>
-<new_str>import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   ScrollView, 
@@ -38,7 +18,6 @@ import { Button } from '@/components/ui/Button';
 import { Switch } from '@/components/ui/Switch';
 import { Picker } from '@/components/ui/Picker';
 import { Slider } from '@/components/ui/Slider';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SettingsData {
   dailyGoal: number;
@@ -63,7 +42,6 @@ const defaultSettings: SettingsData = {
 export default function SettingsScreen() {
   const [settings, setSettings] = useState<SettingsData>(defaultSettings);
   const [loading, setLoading] = useState(false);
-  const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
     loadSettings();
@@ -273,10 +251,7 @@ export default function SettingsScreen() {
             </View>
             <Picker
               selectedValue={settings.language}
-              onValueChange={(value) => {
-                updateSetting('language', value);
-                setLanguage(value);
-              }}
+              onValueChange={(value) => updateSetting('language', value)}
               style={styles.languagePicker}
             >
               <Picker.Item label="Türkçe" value="tr" />
@@ -442,4 +417,4 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#111827',
   },
-});</new_str>
+});
