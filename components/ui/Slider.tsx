@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, PanGestureHandler, Animated } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import Slider from '@react-native-community/slider';
 
 interface SliderProps {
   value: number;
@@ -7,105 +8,58 @@ interface SliderProps {
   minimumValue?: number;
   maximumValue?: number;
   step?: number;
+  style?: any;
   thumbStyle?: any;
   trackStyle?: any;
   minimumTrackTintColor?: string;
   maximumTrackTintColor?: string;
-  style?: any;
+  thumbTintColor?: string;
 }
 
-export function Slider({
+export const CustomSlider: React.FC<SliderProps> = ({
   value,
   onValueChange,
   minimumValue = 0,
-  maximumValue = 10,
+  maximumValue = 100,
   step = 1,
-  thumbStyle,
-  trackStyle,
+  style,
   minimumTrackTintColor = '#10B981',
   maximumTrackTintColor = '#E5E7EB',
-  style,
-}: SliderProps) {
-  const [sliderWidth, setSliderWidth] = React.useState(0);
-  const position = React.useRef(new Animated.Value(0)).current;
-
-  React.useEffect(() => {
-    if (sliderWidth > 0) {
-      const percentage = (value - minimumValue) / (maximumValue - minimumValue);
-      const newPosition = percentage * (sliderWidth - 24);
-      position.setValue(newPosition);
-    }
-  }, [value, sliderWidth, minimumValue, maximumValue]);
-
-  const handleSliderLayout = (event: any) => {
-    setSliderWidth(event.nativeEvent.layout.width);
-  };
-
-  const handlePanGestureEvent = (event: any) => {
-    const { x } = event.nativeEvent;
-    const percentage = Math.max(0, Math.min(1, x / (sliderWidth - 24)));
-    const newValue = minimumValue + percentage * (maximumValue - minimumValue);
-    const steppedValue = Math.round(newValue / step) * step;
-    onValueChange(steppedValue);
-  };
-
-  const percentage = sliderWidth > 0 ? (value - minimumValue) / (maximumValue - minimumValue) : 0;
-
+  thumbTintColor = '#10B981',
+  ...props
+}) => {
   return (
     <View style={[styles.container, style]}>
-      <View 
-        style={[styles.track, trackStyle, { backgroundColor: maximumTrackTintColor }]}
-        onLayout={handleSliderLayout}
-      >
-        <View 
-          style={[
-            styles.activeTrack, 
-            { 
-              width: `${percentage * 100}%`,
-              backgroundColor: minimumTrackTintColor 
-            }
-          ]} 
-        />
-        <Animated.View
-          style={[
-            styles.thumb,
-            thumbStyle,
-            {
-              left: percentage * (sliderWidth - 24),
-              backgroundColor: minimumTrackTintColor,
-            }
-          ]}
-          onTouchEnd={handlePanGestureEvent}
-        />
-      </View>
+      <Slider
+        value={value}
+        onValueChange={onValueChange}
+        minimumValue={minimumValue}
+        maximumValue={maximumValue}
+        step={step}
+        minimumTrackTintColor={minimumTrackTintColor}
+        maximumTrackTintColor={maximumTrackTintColor}
+        thumbStyle={[styles.thumb, { backgroundColor: thumbTintColor }]}
+        trackStyle={styles.track}
+        {...props}
+      />
     </View>
   );
-}
+};
+
+export { CustomSlider as Slider };
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    height: 40,
-    justifyContent: 'center',
+    paddingHorizontal: 10,
   },
   track: {
     height: 6,
     borderRadius: 3,
-    position: 'relative',
-  },
-  activeTrack: {
-    height: 6,
-    borderRadius: 3,
-    position: 'absolute',
-    top: 0,
-    left: 0,
   },
   thumb: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    position: 'absolute',
-    top: -9,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
